@@ -1,0 +1,20 @@
+directories:
+  output: dist
+  buildResources: resources
+files:
+  - filter:
+      - build/**/*
+      - build/**/*
+      - node_modules/**/*
+extraMetadata:
+  main: build/electron.js
+productName: Mycbt
+appId: com.muktada|electron.muktada
+linux:
+  target:
+    - deb
+    - rpm
+    - snap
+    - AppImage
+extends: react-cra
+electronVersion: 29.2.0

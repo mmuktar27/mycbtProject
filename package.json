@@ -1,0 +1,94 @@
+{
+  "name": "mycbt",
+  "version": "0.1.0",
+  "description": "cbt training application",
+  "private": true,
+  "proxy": "http://localhost:5000",
+  "allowedHosts": "all",
+  "main": "electron-main.js",
+  "homepage": "./",
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.5.2",
+    "@fortawesome/free-regular-svg-icons": "^6.5.2",
+    "@fortawesome/free-solid-svg-icons": "^6.5.2",
+    "@fortawesome/react-fontawesome": "^0.2.0",
+    "axios": "^1.6.8",
+    "body-parser": "^1.20.2",
+    "bootstrap": "^5.3.3",
+    "chart.js": "^4.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "font-awesome": "^4.7.0",
+    "jquery": "^3.7.1",
+    "prebuild-install": "^7.1.2",
+    "react": "^18.2.0",
+    "react-bootstrap": "^2.10.2",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.22.3",
+    "react-scripts": "5.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "electron": "electron .",
+    "electron-build": "electron-builder",
+    "prod": "cross-env NODE_ENV=production electron .",
+    "postinstall": "electron-builder install-app-deps",
+    "pack": "electron-builder --dir",
+    "dist": "npm run build && electron-builder",
+
+    "dist-linux": "npm run build && electron-builder --linux"
+  
+  },
+  "build": {
+    "productName": "Mycbt",
+    "appId": "com.muktada|electron.muktada",
+    "files": [
+      "build/**/*",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "buildResources": "resources"
+    },
+    
+    "linux": {
+      "target": [
+        "deb",
+        "rpm",
+        "snap",
+        "AppImage"
+      ]
+    }
+  },
+  "keywords": [],
+  "author": "Me",
+  "license": "ISC",
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^29.2.0",
+    "electron-builder": "^24.13.3",
+    "sqlite3": "^5.1.7",
+    "web-vitals": "^3.5.2",
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4"
+  }
+}
