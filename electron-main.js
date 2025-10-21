@@ -24,7 +24,7 @@ function createWindow() {
 // Create window when Electron is ready
 app.on('ready', () => {
   // Start Express server
-  const sqlite3 = require('sqlite3').verbose(); // Import SQLite3 module
+  const Database = require('better-sqlite3'); // Changed from sqlite3
   const bodyParser = require('body-parser');
   const cors = require('cors');
   const serVer = express();
@@ -35,571 +35,394 @@ app.on('ready', () => {
   // Serve static files from the React app
   serVer.use(express.static(path.join(__dirname, './build')));
 
-// Increase the payload limit for URL-encoded data
-serVer.use(express.urlencoded({ limit: '50mb', extended: true }));
-// Use bodyParser middleware to parse JSON requests
-serVer.use(bodyParser.json());
-// Enable CORS for all routes
-serVer.use(cors());
+  // Increase the payload limit for URL-encoded data
+  serVer.use(express.urlencoded({ limit: '50mb', extended: true }));
+  // Use bodyParser middleware to parse JSON requests
+  serVer.use(bodyParser.json());
+  // Enable CORS for all routes
+  serVer.use(cors());
 
+  // Connect to SQLite databases (better-sqlite3 is synchronous)
+  const db = new Database('./candidates.db');
+  console.log('Connected to the candidate SQLite database.');
 
+  // Create candidates table (synchronous)
+  db.exec(`CREATE TABLE IF NOT EXISTS candidates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      candregno TEXT,
+      fullname TEXT,
+      img TEXT,
+      subj1 TEXT,
+      subj2 TEXT,
+      subj3 TEXT
+  )`);
+  console.log('Candidates table created or already exists.');
 
-const db = new sqlite3.Database('./candidates.db', sqlite3.OPEN_CREATE | sqlite3.OPEN_READWRITE, (err) => {
-    if (err) {
-        console.error('Error connecting to candidate database:', err.message);
-    } else {
-        console.log('Connected to the candidate SQLite database.');
+  // Questions database
+  const qdb = new Database('./questions.db');
+  console.log('Connected to the questions SQLite database.');
 
-        // Check if the 'candidates' table exists and create it if it doesn't
-        db.run(`CREATE TABLE IF NOT EXISTS candidates (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            candregno TEXT,
-            fullname TEXT,
-            img TEXT
-            sub1 TEXT,
-            sub2 TEXT,
-            sub3 TEXT
-        )`, (createErr) => {
-            if (createErr) {
-                console.error('Error creating table:', createErr.message);
-            } else {
-                console.log('Candidates table created or already exists.');
-            }
-        });
-    }
-});
+  // Define API endpoints
 
-// "candregno" "fullname", "img", "sub1" , "subj2", "subj3"
+  // Get all candidates
+  serVer.get('/api/candidates', (req, res) => {
+      try {
+          const rows = db.prepare('SELECT * FROM candidates').all();
+          res.json(rows);
+      } catch (err) {
+          console.error('Error getting candidates:', err.message);
+          res.status(500).json({ error: 'Internal server error' });
+      }
+  });
 
-//CREATE TABLE "question" ( "id","subjID","question", "optA","optB","optC","optD","answer"
+  // Add a new candidate
+  serVer.post('/api/candidates', (req, res) => {
+      try {
+          const { candregno, fullname, img } = req.body;
+          const stmt = db.prepare('INSERT INTO candidates (candregno, fullname, img) VALUES (?, ?, ?)');
+          const result = stmt.run(candregno, fullname, img);
+          res.json({ id: result.lastInsertRowid });
+      } catch (err) {
+          console.error('Error adding candidate:', err.message);
+          res.status(500).json({ error: 'Internal server error' });
+      }
+  });
 
-//CREATE TABLE "subjects" ( "id" INTEGER NOT NULL, "subj", "subjID","desc"
-
-const qdb = new sqlite3.Database('./questions.db', sqlite3.OPEN_CREATE | sqlite3.OPEN_READWRITE, (err) => {
-  if (err) {
-      console.error('Error connecting to questions database:', err.message);
-  } else {
-      console.log('Connected to the questions SQLite database.');
-
-  }
-});
-
-// Define API endpoints
-
-// Get all candidates
-serVer.get('/api/candidates', (req, res) => {
-    db.all('SELECT * FROM candidates', (err, rows) => {
-        if (err) {
-            console.error('Error getting candidates:', err.message);
-            res.status(500).json({ error: 'Internal server error' });
-        } else {
-            res.json(rows);
-        }
-    });
-});
-
-// Add a new candidate
-serVer.post('/api/candidates', (req, res) => {
-    const { candregno, fullname, img } = req.body;
-    db.run('INSERT INTO candidates (candregno, fullname, img) VALUES (?, ?, ?)', [candregno, fullname, img], function(err) {
-        if (err) {
-            console.error('Error adding candidate:', err.message);
-            res.status(500).json({ error: 'Internal server error' });
-        } else {
-            res.json({ id: this.lastID });
-        }
-    });
-});
-
-
-
-
-const checkCandidateInDB = (regNo) => {
-    return new Promise((resolve, reject) => {
-  
-  
-      // Query the database to check if the candidate exists
-      db.get('SELECT * FROM candidates WHERE candregno = ?', [regNo], (err, row) => {
-        if (err) {
-          reject(err);
-        } else {
-          // If row is not null, candidate exists; otherwise, candidate doesn't exist
-          resolve(!!row);
-        }
-      });
-  
-      // Close the database connection
-    
-    });
+  // Check if candidate exists
+  const checkCandidateInDB = (regNo) => {
+      try {
+          const row = db.prepare('SELECT * FROM candidates WHERE candregno = ?').get(regNo);
+          return !!row;
+      } catch (err) {
+          throw err;
+      }
   };
-  
+
   // Route to handle checking if candidate exists
   serVer.post('/api/check-candidate', async (req, res) => {
-    const { regNo } = req.body;
-  
-    // Check if the candidate exists in the database
-    try {
-      const isCandidateExists = await checkCandidateInDB(regNo);
-      res.json({ exists: isCandidateExists });
-    } catch (error) {
-      console.error('Error checking candidate in DB:', error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    }
+      const { regNo } = req.body;
+      try {
+          const isCandidateExists = checkCandidateInDB(regNo);
+          res.json({ exists: isCandidateExists });
+      } catch (error) {
+          console.error('Error checking candidate in DB:', error);
+          res.status(500).json({ error: 'Internal Server Error' });
+      }
   });
 
-
-//get candidate information
-
+  // Get candidate information
   serVer.get('/api/get-candidate/:regNo', (req, res) => {
-    const regNo = req.params.regNo;
-    db.get('SELECT * FROM candidates WHERE candregno = ?', [regNo], (err, rows) => {
-        if (err) {
-            console.error('Error getting questions:', err.message);
-            res.status(500).json({ error: 'Internal server error' });
-        } else {
-            res.json(rows);
-        }
-    });
-  });
-
-//CREATE TABLE "question" ( "id","subjID","question", "optA","optB","optC","optD","answer"
-
-//CREATE TABLE "subjects" ( "id" INTEGER NOT NULL, "subj", "subjID","desc"
-/// fetching exams questions based on users profile
-// Get all candidates
-serVer.get('/api/exam-question', (req, res) => {
-  qdb.all('SELECT * FROM question WHERE subjID in ("ENG","BIO","CHEM","PHY") ', (err, rows) => {
-      if (err) {
+      try {
+          const regNo = req.params.regNo;
+          const row = db.prepare('SELECT * FROM candidates WHERE candregno = ?').get(regNo);
+          res.json(row);
+      } catch (err) {
           console.error('Error getting questions:', err.message);
           res.status(500).json({ error: 'Internal server error' });
-      } else {
+      }
+  });
+
+  // Get exam questions
+  serVer.get('/api/exam-question', (req, res) => {
+      try {
+          const rows = qdb.prepare('SELECT * FROM question WHERE subjID in ("ENG","BIO","CHEM","PHY")').all();
           res.json(rows);
+      } catch (err) {
+          console.error('Error getting questions:', err.message);
+          res.status(500).json({ error: 'Internal server error' });
       }
   });
-});
 
+  // Get exam questions by registration number
+  serVer.get('/api/exam-questions/:regNo', (req, res) => {
+      try {
+          const regNo = req.params.regNo;
+          
+          const candidateData = db.prepare('SELECT subj1, subj2, subj3 FROM candidates WHERE candregno = ?').get(regNo);
+          
+          if (!candidateData) {
+              return res.status(404).json({ error: 'Candidate not found' });
+          }
 
-
-serVer.get('/api/exam-questions/:regNo', (req, res) => {
-  const regNo = req.params.regNo;
-
-  // Query the candidate table to fetch the subjects associated with the candidate's registration number
-  const candidateQuery = 'SELECT subj1, subj2, subj3 FROM candidates WHERE candregno= ?';
-  db.get(candidateQuery, [regNo], (err, candidateData) => {
-    if (err) {
-      console.error('Error getting candidate data:', err.message);
-      res.status(500).json({ error: 'Internal server error fetching Candidate' });
-    } else {
-      // Extract subjects from candidateData
-      const candidateSubjects = [candidateData.subj1, candidateData.subj2, candidateData.subj3].filter(Boolean);
-
-      // Use candidateSubjects to fetch subject details from the subjects table
-      const subjectDetailsQuery = 'SELECT subj,subjID FROM subjects WHERE subjID IN (?,?,?,?)';
-      qdb.all(subjectDetailsQuery, ["ENG",candidateData.subj1, candidateData.subj2, candidateData.subj3], (err, subjectRows) => {
-        if (err) {
-          console.error('Error getting subject data:', err.message);
-          res.status(500).json({ error: 'Internal server error fetching subject' });
-        } else {
-          // Use candidateSubjects to filter questions from the questions table
-          const questionQuery = 'SELECT * FROM question WHERE subjID IN (?,?,?,?)';
-          qdb.all(questionQuery, ["ENG",candidateData.subj1, candidateData.subj2, candidateData.subj3], (err, questionRows) => {
-            if (err) {
-              console.error('Error getting questions:', err.message);
-              res.status(500).json({ error: 'Internal server error fetching questions' });
-            } else {
-              const responseData = {
-                candidateSubjects: subjectRows,
-                questions: questionRows
-              };
-              // Send the response containing both candidateSubjects and questions
-              res.json(responseData);
-            }
-          });
-        }
-      });
-    }
-  });
-});
-
-
-
-//handling saving of users selected options
-
-// Endpoint to save the user's selected option
-serVer.post('/api/saveAnswer', (req, res) => {
-  const { qid,canid,subjid,examID,selectedOption } = req.body;
-  // Insert the selected option into the 'answered' table
-  qdb.run(`INSERT INTO answered ( qid,canid,subjid,examID,selectedOption) VALUES (?, ?, ?,?,?)`,
-    [qid,canid,subjid,examID,selectedOption], (err) => {
-      if (err) {
-        console.error('Error saving selected option:', err.message);
-        res.status(500).send('Error saving selected option');
-      } else {
-        console.log('Selected option saved successfully');
-        res.send('Selected option saved successfully');
+          const subjectRows = qdb.prepare('SELECT subj, subjID FROM subjects WHERE subjID IN (?,?,?,?)').all("ENG", candidateData.subj1, candidateData.subj2, candidateData.subj3);
+          
+          const questionRows = qdb.prepare('SELECT * FROM question WHERE subjID IN (?,?,?,?)').all("ENG", candidateData.subj1, candidateData.subj2, candidateData.subj3);
+          
+          const responseData = {
+              candidateSubjects: subjectRows,
+              questions: questionRows
+          };
+          res.json(responseData);
+      } catch (err) {
+          console.error('Error getting exam questions:', err.message);
+          res.status(500).json({ error: 'Internal server error' });
       }
-    });
-});
-//updating answer
-serVer.post('/api/saveAnswer', (req, res) => {
-  const { qid, canid, subjid, examID, selectedOption } = req.body;
-  // Update the selected option in the 'answered' table
-  qdb.run(`UPDATE answered SET selectedOption = ? WHERE qid = ? AND canid = ? AND subjid = ? AND examID = ?`,
-    [selectedOption, qid, canid, subjid, examID], (err) => {
-      if (err) {
-        console.error('Error updating selected option:', err.message);
-        res.status(500).send('Error updating selected option');
-      } else {
-        console.log('Selected option updated successfully');
-        res.send('Selected option updated successfully');
-      }
-    });
-});
-
-// Endpoint to check if the user has already answered the question
-serVer.get('/api/checkAnswer/:questionId/:candid/:subjId/:examID', (req, res) => {
-  const { questionId, candid, subjId,examID } = req.params;
- 
-
-  // Query the database to check if the user has already answered the question
-  qdb.get(`SELECT * FROM answered WHERE qid = ? AND canid = ? AND subjid = ? AND examID = ?`, [questionId, candid, subjId, examID], (err, row) => {
-    if (err) {
-      console.error('Error checking existing answer:', err.message);
-      res.status(500).send('Error checking existing answer');
-      return;
-    }
-
-    // Send the existing answer data (if found) or null otherwise
-    res.json(row || null);
-  });
-});
-
-// Define the route handler for updating the selected option
-serVer.put('/api/saveAnswer/:id', (req, res) => {
-  const { id } = req.params;
-  const { selectedOption } = req.body;
-
-  // Update the selected option in the database
-  qdb.run(`UPDATE answered SET selectedOption = ? WHERE id = ?`, [selectedOption, id], (err) => {
-    if (err) {
-      console.error('Error updating selected option:', err.message);
-      res.status(500).send('Error updating selected option');
-      return;
-    }
-
-    // Send a success response
-    res.send('Selected option updated successfully');
-  });
-});
-
-
-// Endpoint to retrieve the user's selected option
-serVer.get('/api/getAnswer/:examID/:regNo', (req, res) => {
-  const { examID, regNo } = req.params; // Retrieve examID and regNo from URL parameters
-
-  // Query the 'answered' table to retrieve the selected option
-  qdb.all(`SELECT selectedOption, subjid, qid FROM answered WHERE examID = ? AND canid = ?`,
-    [examID, regNo], (err, rows) => { // Changed 'row' to 'rows' to represent multiple rows
-      if (err) {
-        console.error('Error retrieving selected options:', err.message);
-        res.status(500).send('Error retrieving selected options');
-      } else {
-        console.log('Retrieved selected options:', rows);
-        res.json(rows); // Send all fields for each selected option
-      }
-    });
-});
-
-
-//handling of exam timer
-
-// API endpoint to get timer state from the database
-serVer.get('/api/getTimerState', (req, res) => {
-  const { examID, regNo } = req.query;
-
-  // Query the database to retrieve the timer state
-  qdb.get('SELECT timeElapse FROM exams WHERE examID = ? AND candID = ?', [examID, regNo], (err, row) => {
-    if (err) {
-      console.error('Error retrieving timer state:', err.message);
-      res.status(500).send('Error retrieving timer state');
-    } else {
-      const timeElapsed = row ? row.timeElapse : null;
-      console.log('Retrieved timer state:', timeElapsed);
-      res.json({ timeElapsed });
-    }
-  });
-});
-
-
-serVer.get('/api/gettimeCount/:examID/:regNo', (req, res) => {
-  const { examID, regNo } = req.params; // Retrieve examID and regNo from URL parameters
-
-  qdb.get('SELECT timeElapse FROM exams WHERE examID = ? AND candID = ?', [examID, regNo], (err, row) => {
-    if (err) {
-      console.error('Error retrieving timer state:', err.message);
-      res.status(500).send('Error retrieving timer state');
-    } else {
-      const timeElapsed = row ? row.timeElapse : null;
-      console.log('Retrieved timer state:', timeElapsed);
-      res.json({ timeElapsed });
-    }
-  });
-//console.log(examID)
-
-});
-
-
-
-// API endpoint to update timer state in the database
-serVer.put('/api/updateTimerState', (req, res) => {
-  const { newTimeElapsed, status,examID, regNo } = req.body;
-
-  let sqlStatement = ""; // Initialize the SQL statement variable
-  let params = []; // Initialize the parameters for the SQL statement
-
-  if (status === "Elapsed" || status === "Submitted") {
-    // If the status is 'elapsed' or 'submitted', update both timeElapsed and status
-    sqlStatement = "UPDATE exams SET timeElapse = ?, status = ? WHERE examID = ? AND candID = ?";
-    params = [newTimeElapsed, status, examID, regNo];
-  } else {
-    // If the status is neither 'elapsed' nor 'submitted', update only timeElapsed
-    sqlStatement = "UPDATE exams SET timeElapse = ? WHERE examID = ? AND candID = ?";
-    params = [newTimeElapsed, examID, regNo];
-  }
-
-  qdb.run(sqlStatement, params, function(err) {
-    if (err) {
-      console.error('Error updating timer state:', err.message);
-      res.status(500).send('Error updating timer state');
-    } else {
-      console.log('Timer state updated successfully');
-      res.sendStatus(200);
-    }
   });
 
-
-});
-
-
-serVer.post('/api/submitRegFormData', (req, res) => {
-  const formData = req.body;
-
-  // Insert the form data into the database
-  db.run(`INSERT INTO candidates (candregno, fullname, img, subj1, subj2, subj3) VALUES (?, ?, ?, ?, ?, ?)`,
-    [formData.candregno, formData.fullname, formData.img, formData.subj1, formData.subj2, formData.subj3],
-    function(err) {
-      if (err) {
-        console.error('Error inserting form data into database:', err.message);
-        res.status(500).json({ message: 'Error submitting form data' });
-      } else {
-        console.log('Form data submitted successfully');
-        res.status(200).json({ message: 'Form data submitted successfully', formData });
+  // Save answer
+  serVer.post('/api/saveAnswer', (req, res) => {
+      try {
+          const { qid, canid, subjid, examID, selectedOption } = req.body;
+          const stmt = qdb.prepare('INSERT INTO answered (qid, canid, subjid, examID, selectedOption) VALUES (?, ?, ?, ?, ?)');
+          stmt.run(qid, canid, subjid, examID, selectedOption);
+          console.log('Selected option saved successfully');
+          res.send('Selected option saved successfully');
+      } catch (err) {
+          console.error('Error saving selected option:', err.message);
+          res.status(500).send('Error saving selected option');
       }
-    });
-});
+  });
 
-
-
-//creating new exams examID, timeElapse,candID,status
-
-
-
-serVer.post('/api/createexams', (req, res) => {
-  const { examID, candID, status ,timeElapse} = req.body; // Destructure the properties from req.body
-  
-  // Insert the form data into the database
-  qdb.run(
-    `INSERT INTO exams (examID,timeElapse, candID, status) VALUES (?, ?,?, ?)`,
-    [examID, timeElapse,candID, status],
-    function(err) {
-      if (err) {
-        console.error('Error inserting form data into database:', err.message);
-        res.status(500).json({ message: 'Error submitting form data' });
-      } else {
-        console.log('Form data submitted successfully');
-        res.status(200).json({ message: 'Form data submitted successfully' });
+  // Update answer (Note: You had duplicate POST /api/saveAnswer - keeping both as separate endpoints)
+  serVer.put('/api/updateAnswer', (req, res) => {
+      try {
+          const { qid, canid, subjid, examID, selectedOption } = req.body;
+          const stmt = qdb.prepare('UPDATE answered SET selectedOption = ? WHERE qid = ? AND canid = ? AND subjid = ? AND examID = ?');
+          stmt.run(selectedOption, qid, canid, subjid, examID);
+          console.log('Selected option updated successfully');
+          res.send('Selected option updated successfully');
+      } catch (err) {
+          console.error('Error updating selected option:', err.message);
+          res.status(500).send('Error updating selected option');
       }
-    }
-  );
-});
+  });
 
-
-
-serVer.get('/api/checkexams/:regNo', (req, res) => {
-  const { regNo } = req.params;
-  
-  
-  qdb.get('SELECT examID FROM exams WHERE status = ? AND candID = ?',
-    ['Ongoing', regNo],
-    (err, row) => {
-      if (err) {
-        console.error('Error retrieving exam:', err);
-        res.status(500).json({ error: 'Error retrieving exam' });
-      } else {
-        const examID = row ? row.examID : null;
-        res.json({ examID });
-        console.log('Exam ID:', examID);
+  // Check answer
+  serVer.get('/api/checkAnswer/:questionId/:candid/:subjId/:examID', (req, res) => {
+      try {
+          const { questionId, candid, subjId, examID } = req.params;
+          const row = qdb.prepare('SELECT * FROM answered WHERE qid = ? AND canid = ? AND subjid = ? AND examID = ?').get(questionId, candid, subjId, examID);
+          res.json(row || null);
+      } catch (err) {
+          console.error('Error checking existing answer:', err.message);
+          res.status(500).send('Error checking existing answer');
       }
-    }
-  );
-});
+  });
 
-
-
-
-
-
-serVer.get('/api/checkcandidate/:regNo', (req, res) => {
-  const { regNo } = req.params;
-  
-  
-  db.get('SELECT * FROM candidates WHERE candregno = ?',
-    [regNo],
-    (err, row) => {
-      if (err) {
-        console.error('Error retrieving cand:', err);
-        res.status(500).json({ error: 'Error retrieving cand' });
-      } else {
-        const candid = row ? row.candregno : null;
-        res.json({ candid });
-        console.log('Cand ID:', candid);
+  // Update answer by ID
+  serVer.put('/api/saveAnswer/:id', (req, res) => {
+      try {
+          const { id } = req.params;
+          const { selectedOption } = req.body;
+          const stmt = qdb.prepare('UPDATE answered SET selectedOption = ? WHERE id = ?');
+          stmt.run(selectedOption, id);
+          res.send('Selected option updated successfully');
+      } catch (err) {
+          console.error('Error updating selected option:', err.message);
+          res.status(500).send('Error updating selected option');
       }
-    }
-  );
-});
+  });
 
-serVer.get('/api/getexams/:regNo', (req, res) => {
-  //returns to history page
-  const { regNo } = req.params;
-  
-  qdb.all('SELECT * FROM exams WHERE candID= ?',
-    [regNo],
-    (err, row) => {
-      if (err) {
-        console.error('Error retrieving cand:', err);
-        res.status(500).json({ error: 'Error retrieving cand' });
-      } else {
-        
-        res.json({ row });
-       // console.log('Cand ID:', candid);
+  // Get answers
+  serVer.get('/api/getAnswer/:examID/:regNo', (req, res) => {
+      try {
+          const { examID, regNo } = req.params;
+          const rows = qdb.prepare('SELECT selectedOption, subjid, qid FROM answered WHERE examID = ? AND canid = ?').all(examID, regNo);
+          console.log('Retrieved selected options:', rows);
+          res.json(rows);
+      } catch (err) {
+          console.error('Error retrieving selected options:', err.message);
+          res.status(500).send('Error retrieving selected options');
       }
-    }
-  );
-});
+  });
 
-
-
-
-//challenges api
-
-
-serVer.get('/api/challenges', (req, res) => {
-  //returns to history page
-  
-  qdb.all('SELECT * FROM challenges',
-    (err, row) => {
-      if (err) {
-        console.error('Error retrieving cand:', err);
-        res.status(500).json({ error: 'Error retrieving cand' });
-      } else {
-        
-        res.json({ row });
-       // console.log('Cand ID:', candid);
+  // Get timer state
+  serVer.get('/api/getTimerState', (req, res) => {
+      try {
+          const { examID, regNo } = req.query;
+          const row = qdb.prepare('SELECT timeElapse FROM exams WHERE examID = ? AND candID = ?').get(examID, regNo);
+          const timeElapsed = row ? row.timeElapse : null;
+          console.log('Retrieved timer state:', timeElapsed);
+          res.json({ timeElapsed });
+      } catch (err) {
+          console.error('Error retrieving timer state:', err.message);
+          res.status(500).send('Error retrieving timer state');
       }
-    }
-  );
-});
+  });
 
-
-//get all completed challenges
-
-serVer.get('/api/completedchallenges/:regNo', (req, res) => {
-  //returns to history page
-  const { regNo } = req.params;
-  
-  qdb.all('SELECT * FROM completedChallenges WHERE candID= ?',
-    [regNo],
-    (err, row) => {
-      if (err) {
-        console.error('Error retrieving cand:', err);
-        res.status(500).json({ error: 'Error retrieving cand' });
-      } else {
-        
-        res.json({ row });
-       // console.log('Cand ID:', candid);
+  // Get time count
+  serVer.get('/api/gettimeCount/:examID/:regNo', (req, res) => {
+      try {
+          const { examID, regNo } = req.params;
+          const row = qdb.prepare('SELECT timeElapse FROM exams WHERE examID = ? AND candID = ?').get(examID, regNo);
+          const timeElapsed = row ? row.timeElapse : null;
+          console.log('Retrieved timer state:', timeElapsed);
+          res.json({ timeElapsed });
+      } catch (err) {
+          console.error('Error retrieving timer state:', err.message);
+          res.status(500).send('Error retrieving timer state');
       }
-    }
-  );
-});
+  });
 
+  // Update timer state
+  serVer.put('/api/updateTimerState', (req, res) => {
+      try {
+          const { newTimeElapsed, status, examID, regNo } = req.body;
+          
+          let stmt;
+          if (status === "Elapsed" || status === "Submitted") {
+              stmt = qdb.prepare("UPDATE exams SET timeElapse = ?, status = ? WHERE examID = ? AND candID = ?");
+              stmt.run(newTimeElapsed, status, examID, regNo);
+          } else {
+              stmt = qdb.prepare("UPDATE exams SET timeElapse = ? WHERE examID = ? AND candID = ?");
+              stmt.run(newTimeElapsed, examID, regNo);
+          }
+          
+          console.log('Timer state updated successfully');
+          res.sendStatus(200);
+      } catch (err) {
+          console.error('Error updating timer state:', err.message);
+          res.status(500).send('Error updating timer state');
+      }
+  });
 
+  // Submit registration form
+  serVer.post('/api/submitRegFormData', (req, res) => {
+      try {
+          const formData = req.body;
+          const stmt = db.prepare('INSERT INTO candidates (candregno, fullname, img, subj1, subj2, subj3) VALUES (?, ?, ?, ?, ?, ?)');
+          stmt.run(formData.candregno, formData.fullname, formData.img, formData.subj1, formData.subj2, formData.subj3);
+          console.log('Form data submitted successfully');
+          res.status(200).json({ message: 'Form data submitted successfully', formData });
+      } catch (err) {
+          console.error('Error inserting form data into database:', err.message);
+          res.status(500).json({ message: 'Error submitting form data' });
+      }
+  });
 
-serVer.post('/api/storeCompChallenges', (req, res) => {
- 
-  const { candID, challengeID, completionDate } = req.body;
+  // Create exams
+  serVer.post('/api/createexams', (req, res) => {
+      try {
+          const { examID, candID, status, timeElapse } = req.body;
+          const stmt = qdb.prepare('INSERT INTO exams (examID, timeElapse, candID, status) VALUES (?, ?, ?, ?)');
+          stmt.run(examID, timeElapse, candID, status);
+          console.log('Form data submitted successfully');
+          res.status(200).json({ message: 'Form data submitted successfully' });
+      } catch (err) {
+          console.error('Error inserting form data into database:', err.message);
+          res.status(500).json({ message: 'Error submitting form data' });
+      }
+  });
 
+  // Check exams
+  serVer.get('/api/checkexams/:regNo', (req, res) => {
+      try {
+          const { regNo } = req.params;
+          const row = qdb.prepare('SELECT examID FROM exams WHERE status = ? AND candID = ?').get('Ongoing', regNo);
+          const examID = row ? row.examID : null;
+          res.json({ examID });
+          console.log('Exam ID:', examID);
+      } catch (err) {
+          console.error('Error retrieving exam:', err);
+          res.status(500).json({ error: 'Error retrieving exam' });
+      }
+  });
 
-  const insertQuery = `INSERT INTO completedChallenges (candID, challengeID, completionDate) VALUES (?, ?, ?)`;
+  // Check candidate
+  serVer.get('/api/checkcandidate/:regNo', (req, res) => {
+      try {
+          const { regNo } = req.params;
+          const row = db.prepare('SELECT * FROM candidates WHERE candregno = ?').get(regNo);
+          const candid = row ? row.candregno : null;
+          res.json({ candid });
+          console.log('Cand ID:', candid);
+      } catch (err) {
+          console.error('Error retrieving cand:', err);
+          res.status(500).json({ error: 'Error retrieving cand' });
+      }
+  });
 
-  // Execute the SQL query with the provided data
-  qdb.run(insertQuery, [candID, challengeID, completionDate], (err) => {
-      if (err) {
-          console.error('Error inserting data:', err.message);
-          // Respond with an error message
-          res.status(500).json({ error: 'Error storing challenges' });
-      } else {
+  // Get exams
+  serVer.get('/api/getexams/:regNo', (req, res) => {
+      try {
+          const { regNo } = req.params;
+          const row = qdb.prepare('SELECT * FROM exams WHERE candID = ?').all(regNo);
+          res.json({ row });
+      } catch (err) {
+          console.error('Error retrieving cand:', err);
+          res.status(500).json({ error: 'Error retrieving cand' });
+      }
+  });
+
+  // Get challenges
+  serVer.get('/api/challenges', (req, res) => {
+      try {
+          const row = qdb.prepare('SELECT * FROM challenges').all();
+          res.json({ row });
+      } catch (err) {
+          console.error('Error retrieving cand:', err);
+          res.status(500).json({ error: 'Error retrieving cand' });
+      }
+  });
+
+  // Get completed challenges
+  serVer.get('/api/completedchallenges/:regNo', (req, res) => {
+      try {
+          const { regNo } = req.params;
+          const row = qdb.prepare('SELECT * FROM completedChallenges WHERE candID = ?').all(regNo);
+          res.json({ row });
+      } catch (err) {
+          console.error('Error retrieving cand:', err);
+          res.status(500).json({ error: 'Error retrieving cand' });
+      }
+  });
+
+  // Store completed challenges
+  serVer.post('/api/storeCompChallenges', (req, res) => {
+      try {
+          const { candID, challengeID, completionDate } = req.body;
+          const stmt = qdb.prepare('INSERT INTO completedChallenges (candID, challengeID, completionDate) VALUES (?, ?, ?)');
+          stmt.run(candID, challengeID, completionDate);
           console.log('Data inserted successfully');
-          // Respond with a success message
           res.json({ message: 'Challenges stored successfully' });
+      } catch (err) {
+          console.error('Error inserting data:', err.message);
+          res.status(500).json({ error: 'Error storing challenges' });
       }
   });
-//console.log(candID);
 
-});
-
-
-serVer.get('/api/subjects', (req, res) => {
-  const query = 'SELECT * FROM subjects';
-
-  qdb.all(query, (err, results) => {
-    if (err) {
-      console.error('Error retrieving subjects:', err);
-      res.status(500).json({ error: 'Internal server error' });
-      return;
-    }
-    res.json(results);
+  // Get subjects
+  serVer.get('/api/subjects', (req, res) => {
+      try {
+          const results = qdb.prepare('SELECT * FROM subjects').all();
+          res.json(results);
+      } catch (err) {
+          console.error('Error retrieving subjects:', err);
+          res.status(500).json({ error: 'Internal server error' });
+      }
   });
-});
 
-
-serVer.get('/api/quizequestions/:subjectId', (req, res) => {
-  const { subjectId } = req.params;
-
-  const subjectIdArray = subjectId.split(',');
-
-  // MserVering each subject ID to be wrserVered in single quotes
-  const subjectIdParams = subjectIdArray.map(id => `'${id}'`).join(',');
-  const query = `SELECT * FROM question WHERE subjID IN (${subjectIdParams})`;
-
-
- // console.log(query)
-  // Execute the query
-
-  qdb.all(query, (err, results) => {
-    if (err) {
-      console.error('Error retrieving quiz questions:', err);
-      res.status(500).json({ error: 'Internal server error' });
-      return;
-    }
-   // console.log(results)
-    res.json(results);
+  // Get quiz questions
+  serVer.get('/api/quizequestions/:subjectId', (req, res) => {
+      try {
+          const { subjectId } = req.params;
+          const subjectIdArray = subjectId.split(',');
+          
+          // Create placeholders for prepared statement
+          const placeholders = subjectIdArray.map(() => '?').join(',');
+          const query = `SELECT * FROM question WHERE subjID IN (${placeholders})`;
+          
+          const stmt = qdb.prepare(query);
+          const results = stmt.all(...subjectIdArray);
+          res.json(results);
+      } catch (err) {
+          console.error('Error retrieving quiz questions:', err);
+          res.status(500).json({ error: 'Internal server error' });
+      }
   });
-});
+
+  // Graceful shutdown for databases when app closes
+  app.on('before-quit', () => {
+      db.close();
+      qdb.close();
+      console.log('Databases closed');
+  });
+
   // Define your Express routes here
 
   // Start the Express server
   serVer.listen(port, () => {
-    console.log(`Express server is running on port ${port}`);
+      console.log(`Express server is running on port ${port}`);
   });
 
   // Create the Electron window

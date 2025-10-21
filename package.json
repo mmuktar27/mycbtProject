@@ -13,6 +13,7 @@
     "@fortawesome/free-solid-svg-icons": "^6.5.2",
     "@fortawesome/react-fontawesome": "^0.2.0",
     "axios": "^1.6.8",
+    "better-sqlite3": "^12.4.1",
     "body-parser": "^1.20.2",
     "bootstrap": "^5.3.3",
     "chart.js": "^4.4.3",
@@ -35,16 +36,14 @@
     "electron": "electron .",
     "electron-build": "electron-builder",
     "prod": "cross-env NODE_ENV=production electron .",
-    "postinstall": "electron-builder install-app-deps",
+  "postinstall": "electron-builder install-app-deps && electron-rebuild -f -w better-sqlite3",
     "pack": "electron-builder --dir",
     "dist": "npm run build && electron-builder",
-
-    "dist-linux": "npm run build && electron-builder --linux"
-  
+    "dist-win": "npm run build && electron-builder --win"
   },
   "build": {
     "productName": "Mycbt",
-    "appId": "com.muktada|electron.muktada",
+    "appId": "com.muktada.electron.muktada",
     "files": [
       "build/**/*",
       "node_modules/**/*"
@@ -52,18 +51,14 @@
     "directories": {
       "buildResources": "resources"
     },
-    
-    "linux": {
+    "win": {
       "target": [
-        "deb",
-        "rpm",
-        "snap",
-        "AppImage"
+        "nsis",
+        "portable"
       ]
     }
   },
   "keywords": [],
-  "author": "Me",
   "license": "ISC",
   "eslintConfig": {
     "extends": [
@@ -86,9 +81,13 @@
   "devDependencies": {
     "electron": "^29.2.0",
     "electron-builder": "^24.13.3",
-    "sqlite3": "^5.1.7",
+    "electron-rebuild": "^3.2.9",
     "web-vitals": "^3.5.2",
     "webpack": "^5.91.0",
     "webpack-cli": "^5.1.4"
+  },
+  "author": {
+    "name": "Your Name",
+    "email": "your.email@example.com"
   }
 }

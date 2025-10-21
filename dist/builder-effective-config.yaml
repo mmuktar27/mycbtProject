@@ -9,12 +9,10 @@ files:
 extraMetadata:
   main: build/electron.js
 productName: Mycbt
-appId: com.muktada|electron.muktada
-linux:
+appId: com.muktada.electron.muktada
+win:
   target:
-    - deb
-    - rpm
-    - snap
-    - AppImage
+    - nsis
+    - portable
 extends: react-cra
 electronVersion: 29.2.0
