@@ -721,7 +721,7 @@ setResults(results);
                   </div>
                   <span>
                   
-                  <img src={userinfo.img} alt="Candidate Image" className="img rounded-circle" />
+                  <img src={userinfo?.img} alt="Candidate Image" className="img rounded-circle" />
                   </span>
                   <h5 className="text-uppercase text-success"><b>{ userinfo.fullname}</b></h5>
                   <h5 className="text-uppercase text-success"><b>{regNo}</b></h5>

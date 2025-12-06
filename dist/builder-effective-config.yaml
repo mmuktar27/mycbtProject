@@ -5,14 +5,26 @@ files:
   - filter:
       - build/**/*
       - build/**/*
+      - electron-main.js
+      - candidates.db
+      - questions.db
       - node_modules/**/*
 extraMetadata:
   main: build/electron.js
 productName: Mycbt
 appId: com.muktada.electron.muktada
+asarUnpack:
+  - node_modules/better-sqlite3/**/*
+  - build/**/*
+  - '*.db'
+extraResources:
+  - from: node_modules/better-sqlite3/build/Release
+    to: better-sqlite3
+    filter:
+      - '**/*'
 win:
   target:
     - nsis
     - portable
 extends: react-cra
-electronVersion: 29.2.0
+electronVersion: 29.4.6

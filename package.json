@@ -13,7 +13,7 @@
     "@fortawesome/free-solid-svg-icons": "^6.5.2",
     "@fortawesome/react-fontawesome": "^0.2.0",
     "axios": "^1.6.8",
-    "better-sqlite3": "^12.4.1",
+    "better-sqlite3": "^12.5.0",
     "body-parser": "^1.20.2",
     "bootstrap": "^5.3.3",
     "chart.js": "^4.4.3",
@@ -21,7 +21,6 @@
     "express": "^4.19.2",
     "font-awesome": "^4.7.0",
     "jquery": "^3.7.1",
-    "prebuild-install": "^7.1.2",
     "react": "^18.2.0",
     "react-bootstrap": "^2.10.2",
     "react-dom": "^18.2.0",
@@ -36,17 +35,33 @@
     "electron": "electron .",
     "electron-build": "electron-builder",
     "prod": "cross-env NODE_ENV=production electron .",
-  "postinstall": "electron-builder install-app-deps && electron-rebuild -f -w better-sqlite3",
+    "postinstall": "electron-builder install-app-deps",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
     "pack": "electron-builder --dir",
-    "dist": "npm run build && electron-builder",
-    "dist-win": "npm run build && electron-builder --win"
+    "dist": "npm run build && npm run rebuild && electron-builder",
+    "dist-win": "npm run build && npm run rebuild && electron-builder --win"
   },
-  "build": {
+ "build": {
     "productName": "Mycbt",
     "appId": "com.muktada.electron.muktada",
     "files": [
       "build/**/*",
+      "electron-main.js",
+      "candidates.db",
+      "questions.db",
       "node_modules/**/*"
+    ],
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**/*",
+      "build/**/*",
+      "*.db"
+    ],
+    "extraResources": [
+      {
+        "from": "node_modules/better-sqlite3/build/Release",
+        "to": "better-sqlite3",
+        "filter": ["**/*"]
+      }
     ],
     "directories": {
       "buildResources": "resources"
