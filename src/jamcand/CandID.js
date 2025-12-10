@@ -1,6 +1,7 @@
 import React, { useState}from 'react';
 import { useNavigate} from 'react-router-dom';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 
 export default function CandID() {
@@ -38,39 +39,56 @@ export default function CandID() {
       }
     };
   
-  return (
-    <>
-  
-   
-    
-
-    <div style={{ backgroundColor: '#add8e6' }} className="container-fluid d-flex justify-content-center align-items-center vh-100 ">
-   
-    
-    
-    <div className="row">
-   
-      <div className="col">
-      {showAlert && (
-        <div className="alert alert-danger" role="alert">
-          Candidate does not exist
+return (
+  <>
+    <div 
+      style={{ backgroundColor: '#add8e6' }} 
+      className="container-fluid d-flex justify-content-center align-items-center vh-100"
+    >
+      <div className="row">
+        <div className="float-right mb-4">
+          <button className="btn btn-danger">
+            <Link to="/" className="text-white">
+              Back
+            </Link>
+          </button>
         </div>
-      )}
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <input type="text" style={{ marginBottom: '1.5px' }} className="form-control" placeholder="Enter Your Reg No" value={regNo}
-          onChange={(e) => {setRegNo(e.target.value); setShowAlert(false)}}/>
-          </div>
-          <div className="form-group d-flex justify-content-center">
-          <button type="submit" className="btn btn-success" style={{ width: '100%' }}>
-          {isLoading ? 'Loading...' : 'Submit'}
-        </button>
-      </div>
-  
-        </form>
+
+        <div className="col">
+          {showAlert && (
+            <div className="alert alert-danger" role="alert">
+              Candidate does not exist
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <input 
+                type="text" 
+                style={{ marginBottom: '1.5px' }} 
+                className="form-control" 
+                placeholder="Enter Your Reg No" 
+                value={regNo}
+                onChange={(e) => {
+                  setRegNo(e.target.value); 
+                  setShowAlert(false);
+                }}
+              />
+            </div>
+
+            <div className="form-group d-flex justify-content-center">
+              <button 
+                type="submit" 
+                className="btn btn-success" 
+                style={{ width: '100%' }}
+              >
+                {isLoading ? 'Loading...' : 'Submit'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
-  </div>
   </>
-  )
+);
 }

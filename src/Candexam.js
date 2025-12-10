@@ -10,16 +10,31 @@ import { useLocation } from 'react-router-dom';
 import Modal from 'react-bootstrap/Modal';
 
 import { useNavigate} from 'react-router-dom';
-
+import { useExam } from './hooks/useExam'; 
 export default function Candexam() {
 
   const location = useLocation();
-  const regNo = location.state && location.state.regNo;
-  const userinfo = location.state && location.state.userinFor;
-  const examID = location.state && location.state.examID;
-  const counTer= location.state && location.state.counTer;
-  const [questions, setQuestions] = useState([]);
-  const [candidateSubjects, setCandidateSubjects] = useState([]);
+  const regNo = location?.state && location?.state?.regNo;
+  const userinfo = location?.state && location?.state?.userinFor;
+  const examID = location?.state && location?.state?.examID;
+  const counTer= location?.state && location?.state?.counTer;
+
+  const {
+    questions,
+    candidateSubjects,
+    answered,
+    isLoading,
+    saveAnswer,
+    isSaving,
+    updateTimer,
+  } = useExam(examID, regNo);
+
+
+  console.log('questions')
+    console.log(candidateSubjects)
+      console.log(questions)
+        console.log(answered)
+
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
@@ -46,7 +61,6 @@ export default function Candexam() {
   }
 
 
-  const [answered, setanswered] = useState([]);
 
   const [results, setResults] = useState([]);
   const [counter, setCounter] = useState(counTer);
@@ -55,81 +69,21 @@ export default function Candexam() {
   // Function to update selectedQuestionIndex
 
 
-{/* 
-  const fetchCounter = async (examID, regNo) => {
-    try {
-      const response = await axios.get(`/api/gettimeCount/${examID}/${regNo}`)
-      if (response.data) {
-       
-        setCounter(response.data.timeElapsed)
-       
-      } else {
-        // Handle case when timecount doesn't exist
-        setCounter(120)
-       
-      }
-    } catch (error) {
-      // Handle API call errors
-      console.error('Error checking time count:', error.response ? error.response.data : error.message);
-    }
-  };
-*/}
-  useEffect(() => {
-  
-    fetchData(examID,regNo);
-  
 
-  }, [examID,regNo]);
+ 
 
-  useEffect(() => {
-    // Select a random subject once the candidateSubjects array is populated
-    if (!loading && candidateSubjects.length > 0) {
-      selectRandomSubject();
-    }
-  }, [loading, candidateSubjects]);
+ useEffect(() => {
+  if (!isLoading && candidateSubjects.length > 0 && !selectedSubject) {
+    setSelectedSubject(candidateSubjects[0]);
+    setSelectedQuestionIndex(0);
+  }
+}, [isLoading, candidateSubjects, selectedSubject]);
 
 
-  const fetchData = async (examID, regNo) => {
-    try {
-      // Fetch questions data
-      const questionsResponse = await axios.get(`/api/exam-questions/${regNo}`);
-      const questionsData = questionsResponse.data;
-  
-      // Fetch answered questions data
-      const answeredResponse = await axios.get(`/api/getAnswer/${examID}/${regNo}`);
-      const answeredData = answeredResponse.data;
-  
-      // Set state based on the responses
-      setanswered(answeredData);
-      setCandidateSubjects(questionsData.candidateSubjects);
-      setQuestions(questionsData.questions);
-
-   
-
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      // Handle error or set appropriate state
-    }
-  };
 
 
-  const updateAnswers = async (examID, regNo) => {
-    try {
-      // Fetch questions data
-  
-      // Fetch answered questions data
-      const answeredResponse = await axios.get(`/api/getAnswer/${examID}/${regNo}`);
-      const answeredData = answeredResponse.data;
-  
-      // Set state based on the responses
-      setanswered(answeredData);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      // Handle error or set appropriate state
-    }
-  };
-  
+
+
 
 
   const selectRandomSubject = () => {
@@ -141,144 +95,21 @@ export default function Candexam() {
   };
 
 
-  const handleAnswerSelect = (subjId, questionId, selectedOption) => {
-    setSelectedOptions(prevOptions => {
-      const subjectIndex = prevOptions.findIndex(option => option.subjId === subjId);
-      if (subjectIndex === -1) {
-        return [...prevOptions, { subjId, options: [{ questionId, selectedOption }] }];
-      } else {
-        return prevOptions.map(option => {
-          if (option.subjId === subjId) {
-            const questionIndex = option.options.findIndex(q => q.questionId === questionId);
-            if (questionIndex === -1) {
-              return { ...option, options: [...option.options, { questionId, selectedOption }] };
-            } else {
-              return {
-                ...option,
-                options: option.options.map(q => {
-                  return q.questionId === questionId ? { ...q, selectedOption } : q;
-                })
-              };
-            }
-          }
-          return option;
-        });
-      }
-    });
-  };
 
-  const updateOptions=(option)=> {
 
-    if (option== 'A'){
-      setisOptionA(true)
+const handleAnswerSelection = (selectedOption) => {
+  if (!selectedSubject || !selectedQuestion) return;
 
-      setisOptionB(false)
-      setisOptionC(false)
-      setisOptionD(false)
-     }
-     else if (option== 'B'){
-      setisOptionB(true)
-
-      setisOptionA(false)
-      setisOptionC(false)
-      setisOptionD(false)
-     }
-     else if (option== 'C'){
-      setisOptionC(true)
-
-      setisOptionB(false)
-      setisOptionA(false)
-      setisOptionD(false)
-     }
-     else if (option== 'D'){
-      setisOptionD(true)
-
-      setisOptionB(false)
-      setisOptionC(false)
-      setisOptionA(false)
-     }else{
-      setisOptionA(false)
-      setisOptionB(false)
-      setisOptionC(false)
-      setisOptionD(false)
-     }
-  }
-
-  const handleAnswerSelection = (subjId, questionId, selectedOption, candid,examID, event= null) => {
-    // Make a GET request to check if the user has already selected an option
-    axios.get(`/api/checkAnswer/${questionId}/${candid}/${subjId}/${examID}`)
-      .then(response => {
-        const existingAnswer = response.data;
-        if (existingAnswer) {
-          // If an existing answer is found, update it
-          axios.put(`/api/saveAnswer/${existingAnswer.id}`, {
-            selectedOption: selectedOption
-          })
-            .then(response => {
-              // Handle success, if needed
-
-           if(event !=null){
-            setisOptionA(selectedOption === 'A');
-            setisOptionB(selectedOption === 'B');
-            setisOptionC(selectedOption === 'C');
-            setisOptionD(selectedOption === 'D');
-           }
-                
-                updateAnswers(examID,candid);
-                    console.log('Selected option updated successfully:', response.data);
-            })
-            .catch(error => {
-              // Handle error
-              console.error('Error updating selected option:', error);
-            });
-        } else {
-          // If no existing answer is found, insert a new record
-          axios.post('/api/saveAnswer', {
-            qid: questionId,
-            canid: candid,
-            subjid: subjId,
-            examID: examID,
-            selectedOption: selectedOption,
-          })
-            .then(response => {
-              // Handle success, if needed
-              if(event !=null){
-                setisOptionA(selectedOption === 'A');
-                setisOptionB(selectedOption === 'B');
-                setisOptionC(selectedOption === 'C');
-                setisOptionD(selectedOption === 'D');
-               }
-
-              updateAnswers(examID,candid);
-              console.log('Selected option saved successfully:', response.data);
-            })
-            .catch(error => {
-              // Handle error
-              console.error('Error saving selected option:', error);
-            });
-        }
-      })
-      .catch(error => {
-        // Handle error
-        console.error('Error checking existing answer:', error);
-      });
-  };
-  
-  
-  // Function to retrieve the user's selected option for a question from the backend
-const getSelectedOption = (subjId, questionId) => {
-  // Make an API call to retrieve the selected option from the backend
-  axios.get(`/api/getAnswer?subjId=${subjId}&questionId=${questionId}`)
-  .then(response => {
-    // Handle success, update the UI with the retrieved selected option
-    const selectedOption = response.data.selectedOption;
-    console.log('Retrieved selected option:', selectedOption);
-    // Update UI logic here...
-  })
-  .catch(error => {
-    // Handle error
-    console.error('Error retrieving selected option:', error);
+  // Save to backend first
+  saveAnswer({
+    questionId: selectedQuestion.id,
+    candid: regNo,
+    subjId: selectedSubject.subjID,
+    examID,
+    selectedOption,
   });
+  
+  // UI will update through the useEffect below that watches 'answered'
 };
   
 
@@ -294,46 +125,20 @@ const getSelectedOption = (subjId, questionId) => {
 
   const handleQuestionSelection = (index) => {
     setSelectedQuestionIndex(index);
-
-    const selectedQuestion = filteredQuestions[index];
-    if (selectedQuestion) {
-      // Retrieve the user's selected options for the current question from the answered array
-      const answeredQuestion = answered.find(item => item.qid === selectedQuestion.id);
-      if (answeredQuestion) {
-        // Update the state variables for options based on the user's previous selection
-        updateOptions(answeredQuestion.selectedOption);
-      } else {
-        // If the user hasn't answered this question yet, reset the state variables for options
-        setisOptionA(false);
-        setisOptionB(false);
-        setisOptionC(false);
-        setisOptionD(false);
-      }
-    }
-
   };
 
   // Filter questions based on selected subject
-  const filteredQuestions = selectedSubject ? questions.filter(question => {
-    return question.subjID === selectedSubject.subjID;
-  }) : [];
+ const filteredQuestions = selectedSubject 
+    ? questions.filter(q => q.subjID === selectedSubject.subjID) 
+    : [];
 
-  const isOptionSelected = (qid) => {
+  const selectedQuestion = filteredQuestions[selectedQuestionIndex];
 
-    
-    const item = answered.find(item => item.qid === qid);
 
-    if(!item){
-      console.log('im a false')
-      return false
-      
-    }else{
-      console.log('im a true')
-      return true
-    }
-
+const isOptionSelected = (qid) => {
+  const item = answered.find(item => item.qid === qid);
+  return item && item.selectedOption !== null && item.selectedOption !== undefined;
 };
-
 let SelectedsubjquestionCount =0;
 
 if (selectedSubject) {
@@ -346,50 +151,28 @@ if (selectedSubject) {
 
 
 
-const selectedQuestion = filteredQuestions[selectedQuestionIndex];
 
 useEffect(() => {
   if (selectedQuestion) {
-    updateAnswers(examID,regNo);
-    handleloadingofqnumbers(selectedQuestion.id);
-  }
-}, [selectedQuestion,examID,regNo]);
-
-const handleloadingofqnumbers = (qid) => {
-  const item = answered.find(item => item.qid === qid);
-  console.log(item);
-  if (item) {
-    console.log('Item found:', item.selectedOption);
-    if (item.selectedOption === 'A') {
-      setisOptionA(true);
-      setisOptionB(false);
-      setisOptionC(false);
-      setisOptionD(false);
-    } else if (item.selectedOption === 'B') {
-      setisOptionB(true);
-      setisOptionA(false);
-      setisOptionC(false);
-      setisOptionD(false);
-    } else if (item.selectedOption === 'C') {
-      setisOptionC(true);
-      setisOptionB(false);
-      setisOptionA(false);
-      setisOptionD(false);
-    } else if (item.selectedOption === 'D') {
-      setisOptionD(true);
-      setisOptionB(false);
-      setisOptionC(false);
-      setisOptionA(false);
+    const answeredQuestion = answered.find(
+      item => item.qid === selectedQuestion.id
+    );
+    
+    if (answeredQuestion?.selectedOption) {
+      const option = answeredQuestion.selectedOption.toUpperCase();
+      setisOptionA(option === 'A');
+      setisOptionB(option === 'B');
+      setisOptionC(option === 'C');
+      setisOptionD(option === 'D');
     } else {
       setisOptionA(false);
       setisOptionB(false);
       setisOptionC(false);
       setisOptionD(false);
     }
-  } else {
-    console.log('Item not found');
   }
-};
+}, [selectedQuestion, answered]);
+
 
    const [showModal, setShowModal] = useState(false);
 
@@ -418,121 +201,102 @@ const handleloadingofqnumbers = (qid) => {
     }
   };
 
-  const totalAnsweredQuestions = answered.filter(item => item.selectedOption !== null).length;
-  const questionCountPersubject = filteredQuestions.length;
- const totalQuestionsCount = questions.length;
 
- const totalAnsweredPersubjectQuestions = selectedSubject ? answered
- .filter(item => item.subjid === selectedSubject.subjID) // Filter by subjId of the selected subject
- .filter(item => item.selectedOption !== null) // Filter items where selectedOption is not null
- .length // Count the filtered items
- : 0;
 
 
  const navigate = useNavigate();
   const handleCompletedExam = () => {
-    navigate('/completedexam', { state: { regNo: regNo, result: results, questions: questions } });
-    updateTimerState(counter,'Submitted')
-   
+    navigate('/completedexam', { 
+      state: { regNo, result: results, questions } 
+    });
+    updateTimer({
+      timeElapsed: counter,
+      status: 'Submitted',
+      examID,
+      regNo
+    });
   };
 
 
-  // Update timer state in the database
-  const updateTimerState = (newTimeElapsed,status,examID,regNo) => {
-    axios.put('/api/updateTimerState', { newTimeElapsed ,status,examID,regNo})
-      .then(() => {
-        console.log('Timer state updated successfully');
-      })
-      .catch(error => {
-        console.error('Error updating timer state:', error);
-      });
-  };
- // Handle countdown
 
 
   // Handle countdown completion
+ useEffect(() => {
+    const timer = counter > 0 && setInterval(() => {
+      setCounter(prev => prev - 1);
+    }, 60000);
+    
+    if (counter <= 90) {
+      setShowEndExamButton(true);
+    }
+
+    // Update timer in backend every minute
+    if (counter > 0) {
+      updateTimer({
+        timeElapsed: counter,
+        status: 'Ongoing',
+        examID,
+        regNo
+      });
+    }
+
+    return () => clearInterval(timer);
+  }, [counter]);
+
+  // Handle exam completion
   useEffect(() => {
-    if (counter <=0) {
+    if (counter <= 0) {
+      updateTimer({
+        timeElapsed: counter,
+        status: 'Elapsed',
+        examID,
+        regNo
+      });
       handleCompletedExam();
-      updateTimerState(counter,'Elapsed',examID,regNo);
     }
   }, [counter]);
 
 
 
-  // Third Attempts
-useEffect(() => {
-    const timer =
-      counter > 0 && setInterval(() => setCounter(counter - 1), 60000);
-      updateTimerState(counter,'Ongoing',examID,regNo)
-     if(counter<= 60){
-      setShowEndExamButton(true);
-     }
-
-    return () => clearInterval(timer);
-  }, [counter]);
 
 
-  useEffect(() => {
-    const handleKeyPress = (event) => {
+
+
+ useEffect(() => {
+    const handleKeyPress = async (event) => {
       const key = event.key.toLowerCase();
+
+      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+        return;
+      }
 
       switch (key) {
         case 'a':
         case 'b':
         case 'c':
         case 'd':
-          if(key==='a'){
-            // alert(key)
- 
-             setisOptionA(true)
-             setisOptionB(false)
-             setisOptionC(false)
-             setisOptionD(false)
-            // console.log(isOptionA)
-            }else if(key==='b'){
-             setisOptionA(false)
-             setisOptionB(true)
-             setisOptionC(false)
-             setisOptionD(false)
-            }else if (key==='c'){
-             setisOptionA(false)
-             setisOptionB(false)
-             setisOptionC(true)
-             setisOptionD(false)
-            }else{
-             setisOptionA(false)
-             setisOptionB(false)
-             setisOptionC(false)
-             setisOptionD(true)
-            }  
-          handleAnswerSelection(selectedSubject.subjID, selectedQuestion.id, key, regNo, examID);
+          handleAnswerSelection(key.toUpperCase());
           break;
-          case 's':
-            if (counter < 60) {
-            setshowEndExamModal(true);
-          }
-          populateResults();
-            break;
-          case 'y':
-            if (showEndExamModal) {
-              handleCompletedExam();
-            }
-            break;
-          case 'r':
-            if (showEndExamModal) {
-            handleCloseEndexammodal();
-          }
-            break;
         case 'n':
-          if (selectedQuestionIndex < filteredQuestions.length - 1) {
-            handleQuestionSelection(selectedQuestionIndex + 1);
-          }
+          handleNextQuestion();
           break;
         case 'p':
-          // Trigger previous
-          if (selectedQuestionIndex > 0) {
-            handleQuestionSelection(selectedQuestionIndex - 1);
+          handlePreviousQuestion();
+          break;
+        case 's':
+          if (counter <= 60) {
+            setshowEndExamModal(true);
+            populateResults();
+          }
+          break;
+        case 'y':
+          if (showEndExamModal) {
+            handleCompletedExam();
+          }
+          break;
+        case 'r':
+          if (showEndExamModal) {
+            setshowEndExamModal(false);
           }
           break;
         default:
@@ -541,55 +305,171 @@ useEffect(() => {
     };
 
     window.addEventListener('keydown', handleKeyPress);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [selectedSubject, selectedQuestion, regNo, examID, selectedQuestionIndex, filteredQuestions,counter]); // Add all dependencies
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [selectedSubject, selectedQuestion, selectedQuestionIndex, filteredQuestions, counter, showEndExamModal]);
 
  
  
-  function populateResults() {
-    const results = [];
-
-    answered.forEach(answer => {
-        const question = questions.find(q => q.id === answer.qid && q.subjID === answer.subjid);
+ const populateResults = () => {
+    const newResults = answered
+      .map(answer => {
+        const question = questions.find(
+          q => q.id === answer.qid && q.subjID === answer.subjid
+        );
         if (question) {
-            const grade = answer.selectedOption === question.answer ? 2.5 : 0;
-            results.push({
-                qid: answer.qid,
-                selectedoption: answer.selectedOption,
-                answer: question.answer,
-                grade: grade
-            });
+          return {
+            qid: answer.qid,
+            selectedoption: answer.selectedOption,
+            answer: question.answer,
+            grade: answer.selectedOption === question.answer ? 2.5 : 0
+          };
         }
-    });
-
-setResults(results);
-}
-
+        return null;
+      })
+      .filter(Boolean);
+    
+    setResults(newResults);
+  };
  
 
   // In fetchData function, update the state with answeredStatus
 
 
-  const renderedButtons = filteredQuestions.map((question, index) => {
-    const questionNumber = index + 1;
-   // const buttonColor = index === selectedQuestionIndex ? 'btn-info' : (answered ? 'btn-primary' : 'btn-danger');
+const renderedButtons = filteredQuestions.map((question, index) => {
+  const questionNumber = index + 1;
+  const isCurrentQuestion = index === selectedQuestionIndex;
+  const isAnswered = isOptionSelected(question.id);
   
-    return (
-      <button
-        key={index}
-        className={`btn btn-xs ${isOptionSelected(question.id) ? 'btn-primary' : 'btn-danger'}`}
-        style={{ marginRight: '4px' }}
-        type="button"
-        onClick={() => handleQuestionSelection(index)}
-      >
-        {questionNumber}
-      </button>
-    );
-  });
+  // Determine button class based on state
+  let buttonClass = 'btn btn-xs ';
+  if (isCurrentQuestion) {
+    buttonClass += 'btn-info'; // Current question = blue
+  } else if (isAnswered) {
+    buttonClass += 'btn-primary'; // Answered = primary color
+  } else {
+    buttonClass += 'btn-danger'; // Not answered = red
+  }
+  
+  return (
+    <button
+      key={index}
+      className={buttonClass}
+      style={{ marginRight: '4px' }}
+      type="button"
+      onClick={() => handleQuestionSelection(index)}
+    >
+      {questionNumber}
+    </button>
+  );
+});
  
+
+
+
+const handlePreviousQuestion = () => {
+  // If not the first question of current subject → go to previous question
+  if (selectedQuestionIndex > 0) {
+    handleQuestionSelection(selectedQuestionIndex - 1);
+  } 
+  // If at the FIRST question of current subject → move to previous subject
+  else if (selectedSubject && candidateSubjects.length > 0) {
+    const currentSubjectIndex = candidateSubjects.findIndex(
+      subject => subject.subjID === selectedSubject.subjID
+    );
+
+    // If THERE IS a previous subject
+    if (currentSubjectIndex > 0) {
+      const prevSubject = candidateSubjects[currentSubjectIndex - 1];
+
+      // Switch subject
+      setSelectedSubject(prevSubject);
+
+      // Find questions of the previous subject
+      const prevSubjectQuestions = questions.filter(
+        q => q.subjID === prevSubject.subjID
+      );
+
+      // Set index to LAST question of that subject
+      setSelectedQuestionIndex(prevSubjectQuestions.length - 1);
+    }
+  }
+};
+
+
+const handleNextQuestion = () => {
+  // If not at the last question of current subject, move to next question
+  if (selectedQuestionIndex < filteredQuestions.length - 1) {
+    handleQuestionSelection(selectedQuestionIndex + 1);
+  } 
+  // If at the last question of current subject, move to next subject
+  else if (selectedSubject && candidateSubjects.length > 0) {
+    const currentSubjectIndex = candidateSubjects.findIndex(
+      subject => subject.subjID === selectedSubject.subjID
+    );
+    
+    // Check if there's a next subject
+    if (currentSubjectIndex < candidateSubjects.length - 1) {
+      const nextSubject = candidateSubjects[currentSubjectIndex + 1];
+      setSelectedSubject(nextSubject);
+      setSelectedQuestionIndex(0); // Start from first question of next subject
+    }
+  }
+};
+
+const isLastQuestionOfLastSubject = () => {
+  if (!selectedSubject || candidateSubjects.length === 0) return false;
+  
+  const currentSubjectIndex = candidateSubjects.findIndex(
+    subject => subject.subjID === selectedSubject.subjID
+  );
+  
+  const isLastSubject = currentSubjectIndex === candidateSubjects.length - 1;
+  const isLastQuestion = selectedQuestionIndex === filteredQuestions.length - 1;
+  
+  return isLastSubject && isLastQuestion;
+};
+
+ const totalAnsweredQuestions = answered.filter(
+    item => item.selectedOption !== null
+  ).length;
+  
+  const totalQuestionsCount = questions.length;
+  
+  const questionCountPersubject = filteredQuestions.length;
+  
+
+
+  const isFirstQuestionOfFirstSubject = () => {
+  if (!selectedSubject || candidateSubjects.length === 0) return false;
+
+  const currentSubjectIndex = candidateSubjects.findIndex(
+    subject => subject.subjID === selectedSubject.subjID
+  );
+
+  const isFirstSubject = currentSubjectIndex === 0;
+  const isFirstQuestion = selectedQuestionIndex === 0;
+
+  return isFirstSubject && isFirstQuestion;
+};
+
+  const totalAnsweredPersubjectQuestions = selectedSubject
+    ? answered.filter(
+        item => item.subjid === selectedSubject.subjID && item.selectedOption !== null
+      ).length
+    : 0;
+
+  if (isLoading) {
+    return (
+      <div className="loading-container" style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh' 
+      }}>
+        <h3>Loading exam...</h3>
+      </div>
+    );
+  }
   return (
     <>
  
@@ -636,74 +516,91 @@ setResults(results);
         <div className="wrapper wrapper-content">
           <div className="row">
             <div className="col-md-10">
-              {selectedSubject && (
-
-                <div className="ibox float-e-margins">
-                  <div className="ibox-title">
-                    <div className="text-navy" style={{ display: 'block', fontWeight: 'bold', fontSize: 16, textAlign: 'left' }}>{selectedSubject.subj}</div>
-                    <div style={{ display: 'block', fontWeight: 'bold', textAlign: 'left' }}>Question {selectedQuestionIndex + 1}</div>
-                  </div>
-                  <div className="ibox-content" style={{ minHeight: '70vh' }}>
-                    <div className="row">
-                      <div className="col-md-12" style={{ minHeight: '63vh', maxHeight: '63vh', overflowY: 'scroll', borderBottom: '1px solid #E7EAEC', fontSize: 15, fontFamily: 'Times New Roman', textAlign: 'left' }}>
-                     
-                      {selectedQuestion ? (
-      <div>
-    
-        <input ref={qidRef} id="qid" type="hidden" value={selectedQuestion.id} />
-        <div style={{ fontFamily: 'Times New Roman', fontSize: 17, wordWrap: 'break-word' }}>
-          <b>{selectedQuestion.subtitle ? selectedQuestion.subtitle.toUpperCase() : null}</b><br /><br />
-          {selectedQuestion.question}<br />
-        </div>
-        {['A', 'B', 'C', 'D'].map((option) => (
-            <div key={option}>
-              <span style={{ display: 'inline-block', marginRight: 5 }}> ({option}) </span>
-              <span style={{ display: 'inline-block', marginRight: 5 }}>
-                <input
-                  name="questionOption"
-                  style={{ width: 20 }}
-                  type="radio"
-                  value={option}
-                  checked={option === 'A' ? isOptionA : (option === 'B' ? isOptionB : (option === 'C' ? isOptionC : isOptionD))}
-
-                  onChange={() => handleAnswerSelection(selectedSubject.subjID, selectedQuestion.id, option,regNo,examID,'event')}
-                />
-              </span>
-              <span style={{ display: 'inline-block', cursor: 'pointer' }}>{selectedQuestion[`opt${option}`]}</span>
-            </div>
-          ))}
-       
-        
-        {/* Similar divs for options B, C, and D */}
+             {selectedSubject && (
+  <div className="ibox float-e-margins">
+    <div className="ibox-title">
+      <div className="text-navy" style={{ display: 'block', fontWeight: 'bold', fontSize: 16, textAlign: 'left' }}>
+        {selectedSubject.subj}
       </div>
-    ) : (
-      <p>No questions available for {selectedSubject.subj}.</p>
-    )}
-  
+      <div style={{ display: 'block', fontWeight: 'bold', textAlign: 'left' }}>
+        Question {selectedQuestionIndex + 1} of {filteredQuestions.length}
+      </div>
+    </div>
+    <div className="ibox-content" style={{ minHeight: '70vh' }}>
+      <div className="row">
+        <div className="col-md-12" style={{ minHeight: '63vh', maxHeight: '63vh', overflowY: 'scroll', borderBottom: '1px solid #E7EAEC', fontSize: 15, fontFamily: 'Times New Roman', textAlign: 'left' }}>
+          {selectedQuestion ? (
+            <div>
+              <input ref={qidRef} id="qid" type="hidden" value={selectedQuestion.id} />
+              <div style={{ fontFamily: 'Times New Roman', fontSize: 17, wordWrap: 'break-word' }}>
+                <b>{selectedQuestion.subtitle ? selectedQuestion.subtitle.toUpperCase() : null}</b><br /><br />
+                {selectedQuestion.question}<br />
+              </div>
+          {['A', 'B', 'C', 'D'].map((option) => (
+  <div key={option} style={{ marginBottom: '10px', cursor: 'pointer' }}>
+    <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', width: '100%' }}>
+      <span style={{ display: 'inline-block', marginRight: 5, fontWeight: 'bold' }}> 
+        ({option}) 
+      </span>
+      <input
+        name="questionOption"
+        style={{ width: 20, cursor: 'pointer', marginRight: 10 }}
+        type="radio"
+        value={option}
+        checked={
+          option === 'A' ? isOptionA : 
+          option === 'B' ? isOptionB : 
+          option === 'C' ? isOptionC : 
+          isOptionD
+        }
+        onChange={() => handleAnswerSelection(option)}
+      />
+      <span style={{ display: 'inline-block', flex: 1 }}>
+        {selectedQuestion[`opt${option}`]}
+      </span>
+    </label>
+  </div>
+))}
+            </div>
+          ) : (
+            <p>No questions available for {selectedSubject.subj}.</p>
+          )}
+        </div>
+      </div>
       
-                </div>
-                    </div>
-                    <div className="row" style={{ marginTop: 20 }}>
-                      <div className="col-md-2">
-                        <button className="btn btn-w-m btn-primary" type="button">PREVIOUS</button>
-                      </div>
-                      <div _ngcontent-c4="" className="col-md-8">
-
-
-
-                      
-      <div >
-
-      
- 
-{renderedButtons}  </div>
-                      </div>
-                      <div className="col-md-2">
-                        <button className="btn btn-w-m btn-primary" type="button">NEXT</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>)}
+      {/* Navigation Buttons */}
+      <div className="row" style={{ marginTop: 20 }}>
+        <div className="col-md-2">
+          <button 
+            className="btn btn-w-m btn-primary" 
+            type="button"
+            onClick={handlePreviousQuestion}
+            disabled={isFirstQuestionOfFirstSubject()}
+            style={{ opacity: isFirstQuestionOfFirstSubject() ? 0.5 : 1 }}
+          >
+            PREVIOUS (P)
+          </button>
+        </div>
+        <div className="col-md-8">
+          <div style={{ textAlign: 'center' }}>
+            {renderedButtons}
+          </div>
+        </div>
+        <div className="col-md-2">
+          <button 
+            className="btn btn-w-m btn-primary" 
+            type="button"
+            onClick={handleNextQuestion}
+            disabled={isLastQuestionOfLastSubject()}
+                          style={{ opacity: isLastQuestionOfLastSubject() ? 0.5 : 1 }}
+                        >
+            NEXT (N)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
      </div>
 
 

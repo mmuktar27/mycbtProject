@@ -12,6 +12,7 @@
     "@fortawesome/free-regular-svg-icons": "^6.5.2",
     "@fortawesome/free-solid-svg-icons": "^6.5.2",
     "@fortawesome/react-fontawesome": "^0.2.0",
+    "@tanstack/react-query": "^5.90.12",
     "axios": "^1.6.8",
     "better-sqlite3": "^12.5.0",
     "body-parser": "^1.20.2",
@@ -21,6 +22,8 @@
     "express": "^4.19.2",
     "font-awesome": "^4.7.0",
     "jquery": "^3.7.1",
+    "lucide-react": "^0.556.0",
+    "node-machine-id": "^1.1.12",
     "react": "^18.2.0",
     "react-bootstrap": "^2.10.2",
     "react-dom": "^18.2.0",
@@ -39,38 +42,62 @@
     "rebuild": "electron-rebuild -f -w better-sqlite3",
     "pack": "electron-builder --dir",
     "dist": "npm run build && npm run rebuild && electron-builder",
-    "dist-win": "npm run build && npm run rebuild && electron-builder --win"
+    "dist-win": "npm run build && npm run rebuild && electron-builder --win",
+    "dist-portable": "npm run build && npm run rebuild && electron-builder --win portable"
   },
- "build": {
+  "build": {
     "productName": "Mycbt",
     "appId": "com.muktada.electron.muktada",
     "files": [
       "build/**/*",
       "electron-main.js",
-      "candidates.db",
-      "questions.db",
-      "node_modules/**/*"
-    ],
-    "asarUnpack": [
-      "node_modules/better-sqlite3/**/*",
-      "build/**/*",
-      "*.db"
+      "node_modules/**/*",
+      "!node_modules/**/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!node_modules/*.d.ts",
+      "!node_modules/.bin"
     ],
     "extraResources": [
       {
-        "from": "node_modules/better-sqlite3/build/Release",
-        "to": "better-sqlite3",
-        "filter": ["**/*"]
+        "from": "resources/",
+        "to": "resources",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**/*",
+      "build/**/*"
+    ],
     "directories": {
-      "buildResources": "resources"
+      "buildResources": "resources",
+      "output": "dist"
     },
     "win": {
       "target": [
-        "nsis",
-        "portable"
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "portable": {
+      "artifactName": "Mycbt-Portable.exe"
     }
   },
   "keywords": [],

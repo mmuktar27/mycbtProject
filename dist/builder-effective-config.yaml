@@ -6,25 +6,37 @@ files:
       - build/**/*
       - build/**/*
       - electron-main.js
-      - candidates.db
-      - questions.db
       - node_modules/**/*
+      - '!node_modules/**/{CHANGELOG.md,README.md,README,readme.md,readme}'
+      - '!node_modules/*/{test,__tests__,tests,powered-test,example,examples}'
+      - '!node_modules/*.d.ts'
+      - '!node_modules/.bin'
 extraMetadata:
   main: build/electron.js
 productName: Mycbt
 appId: com.muktada.electron.muktada
+extraResources:
+  - from: resources/
+    to: resources
+    filter:
+      - '**/*'
 asarUnpack:
   - node_modules/better-sqlite3/**/*
   - build/**/*
-  - '*.db'
-extraResources:
-  - from: node_modules/better-sqlite3/build/Release
-    to: better-sqlite3
-    filter:
-      - '**/*'
 win:
   target:
-    - nsis
-    - portable
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+portable:
+  artifactName: Mycbt-Portable.exe
 extends: react-cra
 electronVersion: 29.4.6

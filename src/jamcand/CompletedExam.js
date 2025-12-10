@@ -2,10 +2,17 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLocation} from 'react-router-dom';
 import ExamSummary from './ExamSummary';
+import { useCandidate } from '../hooks/useCandidate';
+
 const CompletedExam = () => {
 
 const location = useLocation();
-const regNo = location.state && location.state.regNo;
+const regNo = location?.state && location?.state?.regNo;
+
+  const { data: candidate, isLoading, error, isError } = useCandidate(regNo);
+
+  console.log('candidate')
+    console.log(candidate)
 
 const [results, setResult] = useState(location.state && location.state.result)
 const [questions,  setQuestions]= useState(location.state && location.state.questions)
@@ -73,6 +80,41 @@ const renderedResultsBySubject = Object.entries(organizeResultsBySubject()).map(
   );
 });
 
+// Prepare chart data
+const chartData = Object.entries(organizeResultsBySubject()).map(([subject, subjectResults]) => ({
+  subject: subject,
+  totalPoints: subjectResults.reduce((total, result) => total + result.grade, 0),
+  numberOfResults: subjectResults.length
+}));
+
+// Render the chart
+const resultsChart = (
+  <div style={{ width: '100%', height: 400, marginTop: '2rem' }}>
+    <h3>Results by Subject - Chart View</h3>
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={chartData}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="subject" angle={-45} textAnchor="end" height={100} />
+        <YAxis />
+        <Tooltip />
+        <Legend />
+        <Bar dataKey="totalPoints" fill="#8884d8" name="Total Points" />
+        <Bar dataKey="numberOfResults" fill="#82ca9d" name="Number of Results" />
+      </BarChart>
+    </ResponsiveContainer>
+  </div>
+);
+
+// Use both in your component
+return (
+  <div>
+    {resultsChart}
+    <div style={{ marginTop: '2rem' }}>
+      {renderedResultsBySubject}
+    </div>
+  </div>
+);
+
 const handleshowresult = () => {
 
 }
@@ -101,8 +143,14 @@ const handleshowresult = () => {
 
         {/* Rounded image and candidate name */}
         <div className="text-center">
-          <img src="/Profileavatar.jpeg" className="rounded-circle" alt="Candidate" width="150" height="150" />
-          <h2>candidateName</h2>
+<img
+  src={candidate?.img}
+  className="rounded-circle"
+  alt="Candidate"
+  width="150"
+  height="150"
+/>
+          <h2>{candidate?.fullname || 'N/A'}</h2>
           <h3>{regNo}</h3>
         </div>
 

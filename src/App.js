@@ -19,6 +19,7 @@ import CompletedExam from './jamcand/CompletedExam';
 import CandidateList from './Ttest'
 import CandHistory from './jamcand/CandHistory'
 import SuperAdmin from './superAdmin';
+import Admin from './adminPanel/adminPanel';
 //challenge
 
 import Cbtchallenge from './jamcand/Cbtchallenge';
@@ -57,6 +58,7 @@ function App() {
         <Route path="generalcbtlogin" element={ <Generalcbtlogin /> } />
         <Route path="quizcompleted" element={ <EndedGenquize /> } />
         <Route path="/superadmin" element={<SuperAdmin />} />
+           <Route path="/admin" element={<Admin />} />
 
       </Routes>
     </div>
