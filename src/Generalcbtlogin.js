@@ -89,6 +89,11 @@ const handleStartQuize = () => {
 return (
     <div className="container" style={{ marginTop: '50px', display: 'flex', justifyContent: 'center' }}>
     <div className="col-md-7 border-right">
+        <div className="d-flex justify-content-end mb-3">
+              <Link to="/" className="btn btn-danger">
+                Back to Dashboard
+              </Link>
+            </div>
       <div className="terms-container">
         <div className="challenge-terms-container text-center">
           <h2 className="mb-4">Select Subjects</h2>

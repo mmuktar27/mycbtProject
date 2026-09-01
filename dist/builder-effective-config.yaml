@@ -28,15 +28,17 @@ win:
     - target: nsis
       arch:
         - x64
+        - ia32
     - target: portable
       arch:
-        - x64
+        - ia32
+  requestedExecutionLevel: requireAdministrator
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
 portable:
-  artifactName: Mycbt-Portable.exe
+  artifactName: Mycbt-Portable1.exe
 extends: react-cra
 electronVersion: 29.4.6

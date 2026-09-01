@@ -1,6 +1,7 @@
 import React, { useState}from 'react';
 import { useNavigate} from 'react-router-dom';
 import axios from 'axios';
+import { Link } from "react-router-dom";
 
 
 export default function CandidForChallenge() {
@@ -41,14 +42,19 @@ export default function CandidForChallenge() {
   return (
     <>
   
-   
+     <div className="d-flex justify-content-start mt-3 mb-2">
+              <Link to="/" className="btn btn-danger">
+                Back to Dashboard
+              </Link>
+            </div>
     
 
     <div style={{ backgroundColor: '#add8e6' }} className="container-fluid d-flex justify-content-center align-items-center vh-100 ">
    
-    
+   
     
     <div className="row">
+       
    
       <div className="col">
       {showAlert && (

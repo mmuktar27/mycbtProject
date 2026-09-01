@@ -439,6 +439,86 @@ console.log('✅ Activation tables created');
       }
   });
 
+  
+serVer.get('/api/exam-results/:examID/:candID', (req, res) => {
+    try {
+        const { examID, candID } = req.params;
+        
+        console.log('Fetching exam results for:', { examID, candID });
+        
+        // Step 1: Get all answered questions for this exam
+        const answeredQuestions = qdb.prepare(`
+            SELECT 
+                qid,
+                subjid,
+                selectedOption
+            FROM answered 
+            WHERE examID = ? AND canid = ?
+        `).all(examID, candID);
+        
+        if (answeredQuestions.length === 0) {
+            return res.status(404).json({ 
+                message: 'No results found for this exam',
+                results: [],
+                questions: []
+            });
+        }
+        
+        // Step 2: Get the candidate's subjects
+        const candidate = db.prepare(`
+            SELECT subj1, subj2, subj3 
+            FROM candidates 
+            WHERE candregno = ?
+        `).get(candID);
+        
+        if (!candidate) {
+            return res.status(404).json({ 
+                message: 'Candidate not found',
+                results: [],
+                questions: []
+            });
+        }
+        
+        // Step 3: Get all questions for this candidate's subjects (including ENG)
+        const allQuestions = qdb.prepare(`
+            SELECT * 
+            FROM question 
+            WHERE subjID IN (?, ?, ?, ?)
+        `).all("ENG", candidate.subj1, candidate.subj2, candidate.subj3);
+        
+        // Step 4: Build results array with grades
+        const results = answeredQuestions.map(answer => {
+            // Find the corresponding question
+            const question = allQuestions.find(q => q.id === answer.qid);
+            
+            // Calculate grade (1 if correct, 0 if wrong)
+            const grade = question && question.answer === answer.selectedOption ? 1 : 0;
+            
+            return {
+                qid: answer.qid,
+                subjid: answer.subjid,
+                selectedoption: answer.selectedOption,
+                grade: grade
+            };
+        });
+        
+        console.log(`Retrieved ${results.length} results and ${allQuestions.length} questions`);
+        
+        res.json({
+            results: results,
+            questions: allQuestions
+        });
+        
+    } catch (err) {
+        console.error('Error fetching exam results:', err.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch exam results',
+            message: err.message,
+            results: [],
+            questions: []
+        });
+    }
+});
   serVer.put('/api/updateAnswer', (req, res) => {
       try {
           const { qid, canid, subjid, examID, selectedOption } = req.body;

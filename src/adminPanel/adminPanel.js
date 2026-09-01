@@ -5,10 +5,12 @@ import {
   Dropdown, Badge, ListGroup, Collapse, Alert 
 } from 'react-bootstrap';
 import { AdminActivationPanel } from '../activation/adminActivationPanel';
+import { useNavigate } from 'react-router-dom';
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const navigate = useNavigate();
 
   // Sample data
   const stats = [
@@ -26,13 +28,19 @@ export default function AdminPanel() {
   ];
 
   const menuItems = [
-    { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
+  { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, link: '/' },
     { id: 'users', name: 'Users', icon: Users },
      { id: 'activation', name: 'Activation', icon: Key  },
     { id: 'reports', name: 'Reports', icon: FileText },
     { id: 'settings', name: 'Settings', icon: Settings }
   ];
-
+const handleMenuClick = (item) => {
+    if (item.link) {
+      navigate(item.link);
+    } else {
+      setActiveTab(item.id);
+    }
+  };
   const renderContent = () => {
     switch(activeTab) {
       case 'dashboard':
@@ -233,7 +241,7 @@ export default function AdminPanel() {
           {menuItems.map((item) => (
             <Nav.Link
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => handleMenuClick(item)}
               className={`d-flex align-items-center mb-2 rounded ${
                 activeTab === item.id ? 'bg-primary' : 'text-white hover-bg-secondary'
               }`}

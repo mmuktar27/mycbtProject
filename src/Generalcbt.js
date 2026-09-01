@@ -573,6 +573,15 @@ const handleCompletedExam = () => {
 
         <div className="row wrapper border-bottom bg-primary page-heading" style={{ paddingTop: '20px' }}>
           <div className="col-md-8" style={{ textAlign: 'left' }}>
+            <div className="col-md-1" style={{ textAlign: 'left' }}>
+    <button 
+      className="btn btn-danger m-t-n-xs" 
+      onClick={() => navigate('/')}
+      style={{ marginRight: '8px' }}
+    >
+      <i className="fa fa-arrow-left" aria-hidden="true"></i> Home
+    </button>
+  </div> <br/>
 
             {candidateSubjects.map((subject, index) => (
              

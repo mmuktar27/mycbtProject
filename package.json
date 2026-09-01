@@ -1,6 +1,6 @@
 {
   "name": "mycbt",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "cbt training application",
   "private": true,
   "proxy": "http://localhost:5000",
@@ -14,6 +14,7 @@
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@tanstack/react-query": "^5.90.12",
     "axios": "^1.6.8",
+    "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.5.0",
     "body-parser": "^1.20.2",
     "bootstrap": "^5.3.3",
@@ -22,13 +23,17 @@
     "express": "^4.19.2",
     "font-awesome": "^4.7.0",
     "jquery": "^3.7.1",
+    "jspdf": "^4.1.0",
+    "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.556.0",
     "node-machine-id": "^1.1.12",
     "react": "^18.2.0",
     "react-bootstrap": "^2.10.2",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3",
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "recharts": "^3.7.0",
+    "xlsx": "^0.18.5"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -36,6 +41,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "electron": "electron .",
+    
     "electron-build": "electron-builder",
     "prod": "cross-env NODE_ENV=production electron .",
     "postinstall": "electron-builder install-app-deps",
@@ -43,7 +49,8 @@
     "pack": "electron-builder --dir",
     "dist": "npm run build && npm run rebuild && electron-builder",
     "dist-win": "npm run build && npm run rebuild && electron-builder --win",
-    "dist-portable": "npm run build && npm run rebuild && electron-builder --win portable"
+    "dist-portable": "npm run build && npm run rebuild && electron-builder --win --ia32",
+    "dist-both": "npm run build && npm run rebuild && electron-builder --win nsis portable"
   },
   "build": {
     "productName": "Mycbt",
@@ -78,17 +85,14 @@
       "target": [
         {
           "target": "nsis",
-          "arch": [
-            "x64"
-          ]
+          "arch": ["ia32"]
         },
         {
           "target": "portable",
-          "arch": [
-            "x64"
-          ]
+          "arch":["ia32"]
         }
-      ]
+      ],
+      "requestedExecutionLevel": "requireAdministrator"
     },
     "nsis": {
       "oneClick": false,
@@ -97,7 +101,7 @@
       "createStartMenuShortcut": true
     },
     "portable": {
-      "artifactName": "Mycbt-Portable.exe"
+      "artifactName": "Mycbt-Portable1.exe"
     }
   },
   "keywords": [],
@@ -129,7 +133,7 @@
     "webpack-cli": "^5.1.4"
   },
   "author": {
-    "name": "Your Name",
-    "email": "your.email@example.com"
+    "name": "muktada labs",
+    "email": "muhammedmuktar@gmail.com"
   }
 }

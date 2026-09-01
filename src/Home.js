@@ -15,6 +15,8 @@ import { useNavigate} from 'react-router-dom';
 
 import ActivateButton from './activation/ActivateButton';
 import { useActivationStatus } from './hooks/useActivationStatus';
+import { useAdminShortcut } from './hooks/useAdminShortcut';
+import NewLogo from './resources/mycbt-logo.svg';
 
 function Home() {
 const {
@@ -47,6 +49,7 @@ const [alertConfig, setAlertConfig] = useState({
   message: ''
 });
   const navigate = useNavigate();
+  const { showAdminLink } = useAdminShortcut();
 
   // Initialize useHistory hook
 const TopNavbar = ({ handleShowRegModal, handleShowHistoryModal }) => {
@@ -54,9 +57,20 @@ const TopNavbar = ({ handleShowRegModal, handleShowHistoryModal }) => {
     <Navbar bg="light" expand="lg" className="shadow-sm">
       <Container fluid>
         {/* Brand/Logo */}
-        <Navbar.Brand href="#home" className="fw-bold text-primary">
-          MYCBT
-        </Navbar.Brand>
+    <Navbar.Brand href="#home" className="d-flex align-items-center gap-2">
+  <img 
+    src={logo} 
+    alt="MyCBT Logo" 
+    style={{ 
+      height: '50px',
+      width: '50px',
+      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+    }} 
+  />
+  <span className="fw-bold text-primary" style={{ fontSize: '1.3rem', letterSpacing: '1px' }}>
+    MyCBT
+  </span>
+</Navbar.Brand>
 
         {/* Toggle button for mobile */}
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
@@ -71,7 +85,7 @@ const TopNavbar = ({ handleShowRegModal, handleShowHistoryModal }) => {
           </Nav>
 
           {/* Right side buttons */}
-          <Nav className="ms-auto">
+          <Nav className="ms-auto  gap-2">
             <Button 
               variant="primary" 
               onClick={handleShowRegModal}
@@ -303,11 +317,25 @@ const handleCaptureClick = () => {
         Your system is not activated. Please enter an activation key.
              <ActivateButton refetchActivation={refetchActivation} isActivated={isActivated} activatedAt={activatedAt} setAlertConfig={setAlertConfig} setShowAlertModal={setShowAlertModal}/>
 
-                     <Link to="/admin" className="text-white">
-                                  Back
-                                </Link>
 
-      </div>
+ {showAdminLink && (
+        <div style={{ 
+          position: 'fixed', 
+          bottom: '10px', 
+          right: '10px', 
+          zIndex: 9999 
+        }}>
+          <Link 
+            to="/admin" 
+            className="btn btn-sm btn-secondary"
+            title="Press Ctrl+Alt+M to hide"
+          >
+            <i className="fas fa-cog me-1"></i>
+            Admin
+          </Link>
+        </div>
+      )}
+                           </div>
     );
   }
   return (
@@ -344,74 +372,117 @@ const handleCaptureClick = () => {
       <br />
       <small>Key: {activationKey} | Activated: {activatedAt}</small>
     </div>
+
+    {showAdminLink && (
+        <div style={{ 
+          position: 'fixed', 
+          bottom: '10px', 
+          right: '10px', 
+          zIndex: 9999 
+        }}>
+          <Link 
+            to="/admin" 
+            className="btn btn-sm btn-secondary"
+            title="Press Ctrl+Alt+M to hide"
+          >
+            <i className="fas fa-cog me-1"></i>
+            Admin
+          </Link>
+        </div>
+      )}
 </div>
 
         </div>
         {/* Right column */}
-        <div className="col-md-6" >
-          
-          
-          <div className="row">
-            <div className="col-md-4">
-            <Link to="candid" style={{ textDecoration: 'none' }}>
-              <div className="card border-0" >
-                <img className="card-img-top  w-100" src={computerImage} alt="jamb cbt" style={{ width: '100%', height: '120px' }} />
-                <div className="card-body">
-                  <p className="card-text">CBT</p>
-                </div>
-              </div> </Link>
-            </div>
-           
-            <div className="col-md-4">
-            <Link to="candidforchallenge" style={{ textDecoration: 'none' }}>
-              <div className="card border-0">
-                <img className="card-img-top w-100" src={cbtchallengeImage} alt="Card image cap" style={{ width: '100%', height: '120px' }} />
-                <div className="card-body">
-                  <p className="card-text">CBT Training Challenge</p>
-                </div>
-              </div></Link>
-            </div>
-            <div className="col-md-4">
-            <Link to="generalcbtlogin" style={{ textDecoration: 'none' }}>
-              <div className="card border-0" >
-                <img className="card-img-top  w-100" src={generalcbtchallengeImage} alt="Card image cap"  style={{ width: '100%', height: '120px' }} />
-                <div className="card-body">
-                  <p className="card-text">General CBT Practice</p>
-                </div>
-              </div></Link>
-            </div>
-          </div>
-          <hr style={{borderTop: '3px solid #000'}} />
-          <div className="row">
-            <div className="col-md-4">
-              <div className="card">
-                <img className="card-img-top" src="image_url" alt="Card image cap" />
-                <div className="card-body">
-                  <p className="card-text">Coming Soon</p>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <div className="card">
-                <img className="card-img-top" src="image_url" alt="Card image cap" />
-                <div className="card-body">
-                  <p className="card-text">Coming Soon</p>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <div className="card">
-                <img className="card-img-top" src="image_url" alt="Card image cap" />
-                <div className="card-body">
-                  <p className="card-text">Coming Soon</p>
-                </div>
-              </div>
-            </div>
+        <div className="col-md-6">
+  {/* Logo Section - Top Center */}
 
-         
 
+  {/* Main Cards Section */}
+  <div className="row">
+    <div className="col-md-4">
+      <Link to="candid" style={{ textDecoration: 'none' }}>
+        <div className="card border-0">
+          <img 
+            className="card-img-top w-100" 
+            src={computerImage} 
+            alt="jamb cbt" 
+            style={{ width: '100%', height: '120px' }} 
+          />
+          <div className="card-body">
+            <p className="card-text">CBT</p>
           </div>
         </div>
+      </Link>
+    </div>
+
+    <div className="col-md-4">
+      <Link to="candidforchallenge" style={{ textDecoration: 'none' }}>
+        <div className="card border-0">
+          <img 
+            className="card-img-top w-100" 
+            src={cbtchallengeImage} 
+            alt="Card image cap" 
+            style={{ width: '100%', height: '120px' }} 
+          />
+          <div className="card-body">
+            <p className="card-text">CBT Training Challenge</p>
+          </div>
+        </div>
+      </Link>
+    </div>
+
+    <div className="col-md-4">
+      <Link to="generalcbtlogin" style={{ textDecoration: 'none' }}>
+        <div className="card border-0">
+          <img 
+            className="card-img-top w-100" 
+            src={generalcbtchallengeImage} 
+            alt="Card image cap" 
+            style={{ width: '100%', height: '120px' }} 
+          />
+          <div className="card-body">
+            <p className="card-text">General CBT Practice</p>
+          </div>
+        </div>
+      </Link>
+    </div>
+  </div>
+
+  <hr style={{ borderTop: '3px solid #000' }} />
+
+  {/* Coming Soon Section */}
+  <div className="row">
+    <div className="col-md-4">
+      <div className="card">
+        <img className="card-img-top" src="image_url" alt="Card image cap" />
+        <div className="card-body">
+          <p className="card-text">Coming Soon</p>
+        </div>
+      </div>
+    </div>
+
+    <div className="col-md-4">
+      <div className="card">
+        <img className="card-img-top" src="image_url" alt="Card image cap" />
+        <div className="card-body">
+          <p className="card-text">Coming Soon</p>
+        </div>
+      </div>
+    </div>
+
+    <div className="col-md-4">
+      <div className="card">
+        <img className="card-img-top" src="image_url" alt="Card image cap" />
+        <div className="card-body">
+          <p className="card-text">Coming Soon</p>
+        </div>
+      </div>
+    </div>
+
+     
+  </div>
+</div>
       </div>
     </div>
 <Modal show={showRegModal} onHide={handleCloseRegModal} dialogClassName="modal-xl" size="xl">

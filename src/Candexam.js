@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendarXmark, faClock } from "@fortawesome/free-regular-svg-icons";
 import { faBullseye, faCalculator } from '@fortawesome/free-solid-svg-icons';
 import { useLocation } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
 import Modal from 'react-bootstrap/Modal';
 
@@ -264,7 +265,7 @@ useEffect(() => {
 
  useEffect(() => {
     const handleKeyPress = async (event) => {
-      const key = event.key.toLowerCase();
+      const key = event.key?.toLowerCase();
 
       if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
         return;
@@ -472,6 +473,8 @@ const isLastQuestionOfLastSubject = () => {
   }
   return (
     <>
+
+
  
       <div className="gray-bg pace-done" oncontextMenu="return false;">
 
@@ -629,7 +632,13 @@ const isLastQuestionOfLastSubject = () => {
               </div>
             </div>
           </div>
-
+   <Link
+  to="/"
+  className="btn btn-danger"
+  style={{ fontSize: '0.8rem', padding: '4px 8px' }}
+>
+  Back to Dashboard
+</Link>
         </div>
   
 <div header="Calculator"  width="300" className="ng-tns-c5-0">

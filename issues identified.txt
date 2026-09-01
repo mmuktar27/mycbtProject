@@ -1,0 +1,2 @@
+when back button is cliked after the final analysis its showing that activation is required,
+challenge is not alowing the user to enter id

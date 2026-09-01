@@ -1,0 +1,56 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Define gradients -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f093fb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f5576c;stop-opacity:1" />
+    </linearGradient>
+
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="95" fill="url(#bgGradient)" filter="url(#shadow)"/>
+  
+  <!-- Inner Circle Border -->
+  <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+
+  <!-- Monitor/Screen Frame -->
+  <rect x="55" y="50" width="90" height="65" rx="6" fill="none" stroke="white" stroke-width="3"/>
+  
+  <!-- Screen display area -->
+  <rect x="58" y="53" width="84" height="59" rx="4" fill="rgba(255,255,255,0.1)"/>
+  
+  <!-- Checkmark inside screen -->
+  <g transform="translate(100, 82)">
+    <!-- Checkmark path -->
+    <path d="M -15 0 L -5 12 L 20 -8" stroke="url(#accentGradient)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Monitor base/stand -->
+  <rect x="75" y="118" width="50" height="3" rx="1.5" fill="white"/>
+  <circle cx="82" cy="122" r="2" fill="white"/>
+  <circle cx="118" cy="122" r="2" fill="white"/>
+
+  <!-- Decorative dots -->
+  <circle cx="120" cy="68" r="2.5" fill="url(#accentGradient)"/>
+  <circle cx="130" cy="75" r="2" fill="url(#accentGradient)" opacity="0.6"/>
+  <circle cx="75" cy="90" r="2" fill="url(#accentGradient)" opacity="0.6"/>
+
+  <!-- Text: MyCBT -->
+  <text x="100" y="150" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="white" letter-spacing="1">
+    MyCBT
+  </text>
+
+  <!-- Subtitle -->
+  <text x="100" y="168" font-family="Arial, sans-serif" font-size="9" text-anchor="middle" fill="rgba(255,255,255,0.8)" letter-spacing="0.5">
+    EXAM MASTERY
+  </text>
+</svg>

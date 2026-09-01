@@ -58,17 +58,35 @@ if (!gotTheLock) {
   });
 }
 
+// Add this new function to determine if running as portable
+function isPortableMode() {
+  const isDev = !app.isPackaged;
+  if (isDev) return false;
+  
+  // Check if running from a portable .exe (not in Program Files)
+  const exePath = app.getPath('exe');
+  const isProgramFiles = exePath.toLowerCase().includes('program files');
+  
+  return !isProgramFiles;
+}
+
+// UPDATE this function
 function getPortableAppPath() {
   const isDev = !app.isPackaged;
   
   if (isDev) {
     return __dirname;
   } else {
-    // Get directory where the .exe is located
-    return path.dirname(app.getPath('exe'));
+    // In production, use userData for installed apps, exe dir for portable
+    if (isPortableMode()) {
+      return path.dirname(app.getPath('exe'));
+    } else {
+      // For installed apps, use the user data directory
+      return app.getPath('userData');
+    }
   }
 }
-
+// Add this function after getPortableAppPath()
 function getResourcesPath() {
   const isDev = !app.isPackaged;
   
@@ -93,73 +111,108 @@ function getResourcesPath() {
     return fallbackPath;
   }
 }
-
+// UPDATE the ensureDatabaseExists function
 function createDefaultDatabase(dbPath, dbName) {
   console.log(`Creating default ${dbName}...`);
+  console.log(`Target path: ${dbPath}`);
+  
   const Database = require('better-sqlite3');
   
-  if (dbName === 'candidates.db') {
-    const db = new Database(dbPath);
-    db.pragma('journal_mode = WAL');
-    db.exec(`CREATE TABLE IF NOT EXISTS candidates (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        candregno TEXT,
-        fullname TEXT,
-        img TEXT,
-        subj1 TEXT,
-        subj2 TEXT,
-        subj3 TEXT
-    )`);
-    db.close();
-    console.log(`✅ Created default ${dbName}`);
-  } else if (dbName === 'questions.db') {
-    const db = new Database(dbPath);
-    db.pragma('journal_mode = WAL');
-    // Create basic structure - you can add more tables as needed
-    db.exec(`CREATE TABLE IF NOT EXISTS question (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        subjID TEXT,
-        question TEXT,
-        optionA TEXT,
-        optionB TEXT,
-        optionC TEXT,
-        optionD TEXT,
-        answer TEXT
-    )`);
-    db.exec(`CREATE TABLE IF NOT EXISTS subjects (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        subj TEXT,
-        subjID TEXT
-    )`);
-    db.exec(`CREATE TABLE IF NOT EXISTS answered (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        qid INTEGER,
-        canid TEXT,
-        subjid TEXT,
-        examID TEXT,
-        selectedOption TEXT
-    )`);
-    db.exec(`CREATE TABLE IF NOT EXISTS exams (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        examID TEXT,
-        timeElapse INTEGER,
-        candID TEXT,
-        status TEXT
-    )`);
-    db.exec(`CREATE TABLE IF NOT EXISTS challenges (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        challengeID TEXT,
-        title TEXT,
-        description TEXT
-    )`);
-    db.exec(`CREATE TABLE IF NOT EXISTS completedChallenges (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        candID TEXT,
-        challengeID TEXT,
-        completionDate TEXT
-    )`);
-    db.close();
-    console.log(`✅ Created default ${dbName} with tables`);
+  try {
+    // Ensure parent directory exists
+    const dir = path.dirname(dbPath);
+    if (!fs.existsSync(dir)) {
+      console.log(`Creating parent directory: ${dir}`);
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    if (dbName === 'candidates.db') {
+      const db = new Database(dbPath);
+      db.pragma('journal_mode = WAL');
+      db.exec(`CREATE TABLE IF NOT EXISTS candidates (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          candregno TEXT,
+          fullname TEXT,
+          img TEXT,
+          subj1 TEXT,
+          subj2 TEXT,
+          subj3 TEXT
+      )`);
+      db.close();
+      console.log(`✅ Created default ${dbName}`);
+    } else if (dbName === 'questions.db') {
+      const db = new Database(dbPath);
+      db.pragma('journal_mode = WAL');
+      // Create basic structure
+      db.exec(`CREATE TABLE IF NOT EXISTS question (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          subjID TEXT,
+          question TEXT,
+          optionA TEXT,
+          optionB TEXT,
+          optionC TEXT,
+          optionD TEXT,
+          answer TEXT
+      )`);
+      db.exec(`CREATE TABLE IF NOT EXISTS subjects (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          subj TEXT,
+          subjID TEXT
+      )`);
+      db.exec(`CREATE TABLE IF NOT EXISTS answered (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          qid INTEGER,
+          canid TEXT,
+          subjid TEXT,
+          examID TEXT,
+          selectedOption TEXT
+      )`);
+      db.exec(`CREATE TABLE IF NOT EXISTS exams (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          examID TEXT,
+          timeElapse INTEGER,
+          candID TEXT,
+          status TEXT
+      )`);
+      db.exec(`CREATE TABLE IF NOT EXISTS challenges (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          challengeID TEXT,
+          title TEXT,
+          description TEXT
+      )`);
+      db.exec(`CREATE TABLE IF NOT EXISTS completedChallenges (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          candID TEXT,
+          challengeID TEXT,
+          completionDate TEXT
+      )`);
+      db.close();
+      console.log(`✅ Created default ${dbName} with tables`);
+    } else if (dbName === 'activations.db') {
+      const db = new Database(dbPath);
+      db.pragma('journal_mode = WAL');
+      db.exec(`CREATE TABLE IF NOT EXISTS admin_activations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          systemId TEXT UNIQUE NOT NULL,
+          activationKey TEXT NOT NULL,
+          generatedAt TEXT NOT NULL,
+          generatedBy TEXT DEFAULT 'admin',
+          status TEXT DEFAULT 'pending'
+      )`);
+      db.exec(`CREATE TABLE IF NOT EXISTS user_activations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          systemId TEXT UNIQUE NOT NULL,
+          activationKey TEXT NOT NULL,
+          activatedAt TEXT NOT NULL,
+          status TEXT DEFAULT 'active',
+          lastChecked TEXT
+      )`);
+      db.close();
+      console.log(`✅ Created default ${dbName}`);
+    }
+  } catch (err) {
+    console.error(`❌ Failed to create ${dbName}:`, err.message);
+    throw err;
   }
 }
 
@@ -167,42 +220,106 @@ function ensureDatabaseExists(dbFileName) {
   const appPath = getPortableAppPath();
   const workingDbPath = path.join(appPath, dbFileName);
   
-  console.log(`\nChecking database: ${dbFileName}`);
-  console.log(`Working DB Path: ${workingDbPath}`);
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`Checking database: ${dbFileName}`);
+  console.log(`App mode: ${isPortableMode() ? 'Portable' : 'Installed'}`);
+  console.log(`Storage location: ${appPath}`);
+  console.log(`Full DB path: ${workingDbPath}`);
+  console.log(`${'='.repeat(60)}`);
+  
+  // Test write permissions
+  try {
+    const testFile = path.join(appPath, '.write-test');
+    fs.writeFileSync(testFile, 'test');
+    fs.unlinkSync(testFile);
+    console.log('✅ Write permissions verified');
+  } catch (err) {
+    console.error('❌ NO WRITE PERMISSION:', err.message);
+    throw new Error(`Cannot write to ${appPath}. Permission denied.`);
+  }
+  
+  // Ensure the directory exists (important for installed apps)
+  const dbDir = path.dirname(workingDbPath);
+  if (!fs.existsSync(dbDir)) {
+    console.log(`Creating directory: ${dbDir}`);
+    try {
+      fs.mkdirSync(dbDir, { recursive: true });
+      console.log('✅ Directory created');
+    } catch (err) {
+      console.error('❌ Failed to create directory:', err.message);
+      throw err;
+    }
+  }
   
   // If working database already exists, use it
   if (fs.existsSync(workingDbPath)) {
-    console.log(`✅ Working database exists`);
-    return workingDbPath;
+    console.log(`✅ Database exists at: ${workingDbPath}`);
+    // Test if we can open it
+    try {
+      const Database = require('better-sqlite3');
+      const testDb = new Database(workingDbPath);
+      testDb.close();
+      console.log('✅ Database file is valid and accessible');
+      return workingDbPath;
+    } catch (err) {
+      console.error('❌ Database file exists but cannot be opened:', err.message);
+      console.log('Attempting to recreate...');
+      try {
+        fs.unlinkSync(workingDbPath);
+      } catch (unlinkErr) {
+        console.error('Failed to delete corrupt database:', unlinkErr.message);
+      }
+    }
   }
 
   // Try to copy from resources folder (template)
   const resourcesPath = getResourcesPath();
   const templateDbPath = path.join(resourcesPath, dbFileName);
   
-  console.log(`Template DB Path: ${templateDbPath}`);
+  console.log(`Looking for template at: ${templateDbPath}`);
+  console.log(`Template exists: ${fs.existsSync(templateDbPath)}`);
   
   if (fs.existsSync(templateDbPath)) {
     try {
+      console.log(`Copying from template...`);
       fs.copyFileSync(templateDbPath, workingDbPath);
       console.log(`✅ Copied ${dbFileName} from template`);
-      return workingDbPath;
+      
+      // Verify the copy worked
+      if (fs.existsSync(workingDbPath)) {
+        const Database = require('better-sqlite3');
+        const testDb = new Database(workingDbPath);
+        testDb.close();
+        console.log('✅ Copy verified successfully');
+        return workingDbPath;
+      }
     } catch (err) {
       console.error(`❌ Error copying ${dbFileName}:`, err.message);
+      console.error('Stack:', err.stack);
     }
   } else {
     console.warn(`⚠️  Template database not found at: ${templateDbPath}`);
   }
 
-  // If no template found, create a new default database
+  // If no template found or copy failed, create a new default database
+  console.log(`Creating new database from scratch...`);
   try {
     createDefaultDatabase(workingDbPath, dbFileName);
-    return workingDbPath;
+    
+    // Verify it was created
+    if (fs.existsSync(workingDbPath)) {
+      console.log('✅ Database created and verified');
+      return workingDbPath;
+    } else {
+      throw new Error('Database file was not created');
+    }
   } catch (err) {
     console.error(`❌ Error creating default database:`, err.message);
+    console.error('Stack:', err.stack);
     throw err;
   }
 }
+
 const ACTIVATION_SECRET = 'MYCBT_SECRET_SALT_2024_SECURE_KEY';
 const ADMIN_PASSWORD = 'Admin@2024'; // Change this!
 function startServer() {
@@ -217,7 +334,7 @@ function startServer() {
   console.log('\nEnvironment:', isDev ? 'Development' : 'Production (Portable)');
   console.log('Exe Path:', app.getPath('exe'));
   console.log('App Path:', getPortableAppPath());
-  console.log('Resources Path:', getResourcesPath());
+
 
   // Get build folder path
   let buildPath;
@@ -331,7 +448,7 @@ console.log('✅ Activation tables created');
     console.error('Stack:', err.stack);
     
     dialog.showErrorBox('Database Error', 
-      `Failed to initialize databases:\n\n${err.message}\n\nThe application will now close.`
+      `Failed to initialize databases:\n\n${err.message}\n\nStorage Path: ${getPortableAppPath()}\n\nThe application will now close.`
     );
     
     app.quit();
@@ -528,7 +645,86 @@ console.log('✅ Activation tables created');
       }
   });
 
-
+// GET exam results for a specific exam and candidate
+serVer.get('/api/exam-results/:examID/:candID', (req, res) => {
+    try {
+        const { examID, candID } = req.params;
+        
+        console.log('Fetching exam results for:', { examID, candID });
+        
+        // Step 1: Get all answered questions for this exam
+        const answeredQuestions = qdb.prepare(`
+            SELECT 
+                qid,
+                subjid,
+                selectedOption
+            FROM answered 
+            WHERE examID = ? AND canid = ?
+        `).all(examID, candID);
+        
+        if (answeredQuestions.length === 0) {
+            return res.status(404).json({ 
+                message: 'No results found for this exam',
+                results: [],
+                questions: []
+            });
+        }
+        
+        // Step 2: Get the candidate's subjects
+        const candidate = db.prepare(`
+            SELECT subj1, subj2, subj3 
+            FROM candidates 
+            WHERE candregno = ?
+        `).get(candID);
+        
+        if (!candidate) {
+            return res.status(404).json({ 
+                message: 'Candidate not found',
+                results: [],
+                questions: []
+            });
+        }
+        
+        // Step 3: Get all questions for this candidate's subjects (including ENG)
+        const allQuestions = qdb.prepare(`
+            SELECT * 
+            FROM question 
+            WHERE subjID IN (?, ?, ?, ?)
+        `).all("ENG", candidate.subj1, candidate.subj2, candidate.subj3);
+        
+        // Step 4: Build results array with grades
+        const results = answeredQuestions.map(answer => {
+            // Find the corresponding question
+            const question = allQuestions.find(q => q.id === answer.qid);
+            
+            // Calculate grade (1 if correct, 0 if wrong)
+            const grade = question && question.answer === answer.selectedOption ? 1 : 0;
+            
+            return {
+                qid: answer.qid,
+                subjid: answer.subjid,
+                selectedoption: answer.selectedOption,
+                grade: grade
+            };
+        });
+        
+        console.log(`Retrieved ${results.length} results and ${allQuestions.length} questions`);
+        
+        res.json({
+            results: results,
+            questions: allQuestions
+        });
+        
+    } catch (err) {
+        console.error('Error fetching exam results:', err.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch exam results',
+            message: err.message,
+            results: [],
+            questions: []
+        });
+    }
+});
 serVer.post('/api/submitRegFormData', (req, res) => {
     try {
         const formData = req.body;
