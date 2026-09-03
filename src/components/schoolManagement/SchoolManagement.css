@@ -60,7 +60,50 @@
 /* ==========================================
    HEADER
    ========================================== */
+.school-management svg {
+  width: auto;
+  height: auto;
+  flex-shrink: 0;
+}
 
+/* Table action icons specifically */
+.btn-icon svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Tab icons */
+.tab svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* Header/title icons */
+.management-header svg,
+.settings-header h2 svg,
+.classes-header h2 svg,
+.departments-header h2 svg {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+/* Button icons */
+.btn svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+/* Form section label icons */
+.form-group label svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Alert icons */
+.alert svg {
+  width: 20px !important;
+  height: 20px !important;
+}
 .management-header {
   text-align: center;
   margin-bottom: 40px;

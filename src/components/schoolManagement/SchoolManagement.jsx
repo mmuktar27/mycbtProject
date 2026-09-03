@@ -18,10 +18,10 @@ import {
   ChevronDown,
   Check,
   AlertCircle,
-  RefreshCw
+  RefreshCw,Calendar
 } from 'lucide-react';
 import './SchoolManagement.css';
-
+ import AcademicCalendar from './AcademicCalendar';
 const SchoolManagement = () => {
   const [activeTab, setActiveTab] = useState('settings'); // settings, classes, departments
   const [loading, setLoading] = useState(false);
@@ -1415,6 +1415,9 @@ const renderSubjects = () => {
           <BookOpen size={20} />
           Classes ({classes.length})
         </button>
+          <button className={`tab ${activeTab === 'calendar' ? 'active' : ''}`}          onClick={() => setActiveTab('calendar')}>
+     <Calendar size={20} /> Academic Calendar
+  </button>
         <button 
           className={`tab ${activeTab === 'departments' ? 'active' : ''}`}
           onClick={() => setActiveTab('departments')}
@@ -1435,6 +1438,7 @@ const renderSubjects = () => {
       <div className="tab-content">
         {activeTab === 'settings' && renderSchoolSettings()}
         {activeTab === 'classes' && renderClasses()}
+        {activeTab === 'calendar' && <AcademicCalendar />}
         {activeTab === 'departments' && renderDepartments()}
         {activeTab === 'subjects' && renderSubjects()}
       </div>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   Users, Search, Filter, Eye, Edit, Trash2, Download,
-  Phone, Mail, Calendar, GraduationCap, ChevronLeft, 
+  Calendar, GraduationCap, ChevronLeft,
   ChevronRight, RefreshCw, UserPlus, Upload
 } from 'lucide-react';
 import './StudentsList.css';
@@ -110,7 +110,7 @@ const StudentsList = () => {
       'Student ID', 'Admission Number', 'First Name', 'Last Name',
       'Class', 'Gender', 'Parent Phone', 'Status'
     ];
-    
+
     const rows = data.map(s => [
       s.studentId,
       s.admissionNumber,
@@ -185,72 +185,208 @@ const StudentsList = () => {
       </div>
 
       {/* Filters and Search */}
-      <div className="filters-section">
-        <div className="search-box">
-          <Search className="search-icon" size={20} />
-          <input
-            type="text"
-            placeholder="Search by name, student ID, admission number, or phone..."
-            value={searchTerm}
-            onChange={handleSearch}
-            className="search-input"
-          />
-        </div>
+    <div style={{
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '12px',
+  alignItems: 'center',
+  marginBottom: '20px',
+  padding: '14px 16px',
+  backgroundColor: '#f9fafb',
+  border: '1px solid #e5e7eb',
+  borderRadius: '10px'
+}}>
+  {/* Search Box */}
+  <div style={{ position: 'relative', width: '320px', height: '40px' }}>
+    <Search
+      size={20}
+      style={{
+        position: 'absolute',
+        left: '12px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        color: '#9ca3af',
+        pointerEvents: 'none'
+      }}
+    />
+    <input
+      type="text"
+      placeholder="Search by name, student ID, admission number, or phone..."
+      value={searchTerm}
+      onChange={handleSearch}
+      style={{
+        width: '100%',
+        height: '100%',
+        padding: '0 12px 0 40px',
+        border: '1px solid #d1d5db',
+        borderRadius: '8px',
+        fontSize: '0.9rem',
+        backgroundColor: '#ffffff',
+        boxSizing: 'border-box',
+        outline: 'none'
+      }}
+    />
+  </div>
 
-        <div className="filter-controls">
-          <div className="filter-group">
-            <Filter size={18} />
-            <select 
-              value={filterClass} 
-              onChange={(e) => {
-                setFilterClass(e.target.value);
-                setPagination({ ...pagination, page: 1 });
-              }} 
-              className="filter-select"
-            >
-              <option value="">All Classes</option>
-              {classes.map(cls => (
-                <option key={cls.id} value={cls.className}>
-                  {cls.className}
-                </option>
-              ))}
-            </select>
-          </div>
+  {/* Filter Controls */}
+  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
 
-          <div className="filter-group">
-            <select 
-              value={filterStatus} 
-              onChange={(e) => {
-                setFilterStatus(e.target.value);
-                setPagination({ ...pagination, page: 1 });
-              }} 
-              className="filter-select"
-            >
-              <option value="active">Active</option>
-              <option value="graduated">Graduated</option>
-              <option value="transferred">Transferred</option>
-              <option value="withdrawn">Withdrawn</option>
-              <option value="">All Status</option>
-            </select>
-          </div>
+    {/* Class Filter */}
+    <div style={{
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      height: '40px',
+      padding: '0 28px 0 10px',
+      backgroundColor: '#ffffff',
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
+      boxSizing: 'border-box'
+    }}>
+      <Filter size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
+      <select
+        value={filterClass}
+        onChange={(e) => {
+          setFilterClass(e.target.value);
+          setPagination({ ...pagination, page: 1 });
+        }}
+        style={{
+          appearance: 'none',
+          WebkitAppearance: 'none',
+          MozAppearance: 'none',
+          border: 'none',
+          outline: 'none',
+          background: 'transparent',
+          fontSize: '0.875rem',
+          color: '#374151',
+          cursor: 'pointer',
+          minWidth: '100px',
+          height: '100%'
+        }}
+      >
+        <option value="">All Classes</option>
+        {classes.map(cls => (
+          <option key={cls.id} value={cls.className}>{cls.className}</option>
+        ))}
+      </select>
+      {/* Custom arrow */}
+      <span style={{
+        position: 'absolute',
+        right: '10px',
+        top: '50%',
+        width: '8px',
+        height: '8px',
+        borderRight: '2px solid #9ca3af',
+        borderBottom: '2px solid #9ca3af',
+        transform: 'translateY(-65%) rotate(45deg)',
+        pointerEvents: 'none'
+      }} />
+    </div>
 
-          <div className="filter-group">
-            <select 
-              value={filterType} 
-              onChange={(e) => {
-                setFilterType(e.target.value);
-                setPagination({ ...pagination, page: 1 });
-              }} 
-              className="filter-select"
-            >
-              <option value="">All Types</option>
-              <option value="New">New Admission</option>
-              <option value="Transfer">Transfer</option>
-              <option value="Bulk Import">Bulk Import</option>
-            </select>
-          </div>
-        </div>
-      </div>
+    {/* Status Filter */}
+    <div style={{
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      height: '40px',
+      padding: '0 28px 0 10px',
+      backgroundColor: '#ffffff',
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
+      boxSizing: 'border-box'
+    }}>
+      <select
+        value={filterStatus}
+        onChange={(e) => {
+          setFilterStatus(e.target.value);
+          setPagination({ ...pagination, page: 1 });
+        }}
+        style={{
+          appearance: 'none',
+          WebkitAppearance: 'none',
+          MozAppearance: 'none',
+          border: 'none',
+          outline: 'none',
+          background: 'transparent',
+          fontSize: '0.875rem',
+          color: '#374151',
+          cursor: 'pointer',
+          minWidth: '100px',
+          height: '100%'
+        }}
+      >
+        <option value="active">Active</option>
+        <option value="graduated">Graduated</option>
+        <option value="transferred">Transferred</option>
+        <option value="withdrawn">Withdrawn</option>
+        <option value="">All Status</option>
+      </select>
+      <span style={{
+        position: 'absolute',
+        right: '10px',
+        top: '50%',
+        width: '8px',
+        height: '8px',
+        borderRight: '2px solid #9ca3af',
+        borderBottom: '2px solid #9ca3af',
+        transform: 'translateY(-65%) rotate(45deg)',
+        pointerEvents: 'none'
+      }} />
+    </div>
+
+    {/* Type Filter */}
+    <div style={{
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      height: '40px',
+      padding: '0 28px 0 10px',
+      backgroundColor: '#ffffff',
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
+      boxSizing: 'border-box'
+    }}>
+      <select
+        value={filterType}
+        onChange={(e) => {
+          setFilterType(e.target.value);
+          setPagination({ ...pagination, page: 1 });
+        }}
+        style={{
+          appearance: 'none',
+          WebkitAppearance: 'none',
+          MozAppearance: 'none',
+          border: 'none',
+          outline: 'none',
+          background: 'transparent',
+          fontSize: '0.875rem',
+          color: '#374151',
+          cursor: 'pointer',
+          minWidth: '100px',
+          height: '100%'
+        }}
+      >
+        <option value="">All Types</option>
+        <option value="New">New Admission</option>
+        <option value="Transfer">Transfer</option>
+        <option value="Bulk Import">Bulk Import</option>
+      </select>
+      <span style={{
+        position: 'absolute',
+        right: '10px',
+        top: '50%',
+        width: '8px',
+        height: '8px',
+        borderRight: '2px solid #9ca3af',
+        borderBottom: '2px solid #9ca3af',
+        transform: 'translateY(-65%) rotate(45deg)',
+        pointerEvents: 'none'
+      }} />
+    </div>
+
+  </div>
+</div>
 
       {/* Students Table */}
       {loading ? (
@@ -275,7 +411,6 @@ const StudentsList = () => {
                   <th>Name</th>
                   <th>Class</th>
                   <th>Gender</th>
-                  <th>Contact</th>
                   <th>Admission Date</th>
                   <th>Type</th>
                   <th>Status</th>
@@ -286,24 +421,19 @@ const StudentsList = () => {
                 {students.map((student) => (
                   <tr key={student.id}>
                     <td>
-                      <span className="student-id">{student.studentId}</span>
+                      <span className="admission-number">{student.studentId}</span>
                     </td>
                     <td>
                       <span className="admission-number">{student.admissionNumber}</span>
                     </td>
                     <td>
                       <div className="student-info">
-                        {student.profileImage ? (
+                        {student.profileImage && (
                           <img
                             src={student.profileImage}
                             alt={student.firstName}
                             className="student-avatar"
                           />
-                        ) : (
-                          <div className="student-avatar-placeholder">
-                            {student.firstName.charAt(0)}
-                            {student.lastName.charAt(0)}
-                          </div>
                         )}
                         <div className="student-name">
                           <span className="name-primary">
@@ -316,24 +446,12 @@ const StudentsList = () => {
                       </div>
                     </td>
                     <td>
-                      <div className="class-info">
-                        <GraduationCap size={14} />
-                        <span>{student.currentClass}</span>
-                      </div>
+                     <div className="class-info">
+  <GraduationCap size={14} />
+  <span className="class-name">{student.currentClass}</span>
+</div>
                     </td>
                     <td>{student.gender}</td>
-                    <td>
-                      <div className="contact-info">
-                        <div className="contact-item">
-                          <Phone size={12} /> {student.parentPhone}
-                        </div>
-                        {student.parentEmail && (
-                          <div className="contact-item">
-                            <Mail size={12} /> {student.parentEmail}
-                          </div>
-                        )}
-                      </div>
-                    </td>
                     <td>
                       <div className="date-info">
                         <Calendar size={14} />
@@ -351,21 +469,21 @@ const StudentsList = () => {
                           className="btn-icon btn-view"
                           title="View Profile"
                         >
-                          <Eye size={16} />
+                          <Eye size={22} color="#2563eb" strokeWidth={2.25} />
                         </button>
                         <button
                           onClick={() => navigate(`/students/edit/${student.studentId}`)}
                           className="btn-icon btn-edit"
                           title="Edit Student"
                         >
-                          <Edit size={16} />
+                          <Edit size={22} color="#059669" strokeWidth={2.25} />
                         </button>
                         <button
                           onClick={() => handleDeleteClick(student)}
                           className="btn-icon btn-delete"
                           title="Withdraw Student"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={22} color="#dc2626" strokeWidth={2.25} />
                         </button>
                       </div>
                     </td>

@@ -39,27 +39,25 @@ const MainLayout = ({ children }) => {
     {
       key: 'dashboard',
       title: 'Dashboard',
-      icon: <Home />,
-      path: '/dashboard',
+      icon: <Home size={20} />,
+      path: '/maindashboard',
       badge: null
     },
     {
       key: 'students',
       title: 'Student Management',
-      icon: <GraduationCap />,
+      icon: <GraduationCap size={20} />,
       path: '/students',
       badge: null,
       submenu: [
         { title: 'All Students', path: '/students/all' },
-        { title: 'Add New Student', path: '/students/add' },
-
         { title: 'Bulk Import', path: '/students/import' }
       ]
     },
     {
       key: 'admission',
       title: 'Admission Processing',
-      icon: <UserPlus />,
+      icon: <UserPlus size={20} />,
       path: '/admission',
       badge: null,
       submenu: [
@@ -72,7 +70,7 @@ const MainLayout = ({ children }) => {
     {
       key: 'fees',
       title: 'Fee Collection & Receipts',
-      icon: <Banknote />,
+      icon: <Banknote size={20}/>,
       path: '/fees',
       badge: null,
       submenu: [
@@ -86,7 +84,7 @@ const MainLayout = ({ children }) => {
     {
       key: 'results',
       title: 'Result Management',
-      icon: <LineChart />,
+      icon: <LineChart size={20}/>,
       path: '/results',
       badge: null,
       submenu: [
@@ -99,18 +97,17 @@ const MainLayout = ({ children }) => {
     {
       key: 'reportcards',
       title: 'Report Card Generation',
-      icon: <FileText />,
+      icon: <FileText size={20}/>,
       path: '/reportcards',
       badge: null,
       submenu: [
-        { title: 'Generate Report Cards', path: '/reportcards/generate' },
-
+        { title: 'Generate Report Cards', path: '/reportcards/generate' }
       ]
     },
     {
       key: 'cbt',
       title: 'CBT Exams',
-      icon: <Laptop />,
+      icon: <Laptop size={20}/>,
       path: '/cbt',
       badge: null,
       submenu: [
@@ -123,20 +120,19 @@ const MainLayout = ({ children }) => {
     {
       key: 'staff',
       title: 'Staff Management',
-      icon: <Users />,
+      icon: <Users size={20}/>,
       path: '/staff',
       badge: null,
       submenu: [
         { title: 'All Staff', path: '/staff/all' },
         { title: 'Add Staff', path: '/staff/add' },
-  
         { title: 'Departments', path: '/staff/departments' }
       ]
     },
     {
       key: 'attendance',
       title: 'Attendance Tracking',
-      icon: <ClipboardCheck />,
+      icon: <ClipboardCheck size={20}/>,
       path: '/attendance',
       badge: null,
       submenu: [
@@ -148,7 +144,7 @@ const MainLayout = ({ children }) => {
     {
       key: 'reports',
       title: 'Basic Reports',
-      icon: <BarChart3 />,
+      icon: <BarChart3 size={20}/>,
       path: '/reports',
       badge: null,
       submenu: [
@@ -161,7 +157,7 @@ const MainLayout = ({ children }) => {
     {
       key: 'backup',
       title: 'Data Backup/Restore',
-      icon: <Database />,
+      icon: <Database size={20}/>,
       path: '/backup',
       badge: null,
       submenu: [
@@ -171,10 +167,10 @@ const MainLayout = ({ children }) => {
         { title: 'Settings', path: '/backup/settings' }
       ]
     },
-       {
+    {
       key: 'schoolmanagement',
       title: 'School Management',
-      icon: <Home />,
+      icon: <Home size={20}/>,
       path: '/school-management',
       badge: null
     }
@@ -197,7 +193,7 @@ const MainLayout = ({ children }) => {
             </div>
           )}
           <button className="toggle-btn" onClick={toggleSidebar}>
-            {sidebarCollapsed ? <Menu /> : <X />}
+           {sidebarCollapsed ? <Menu size={20} /> : <X size={20} />}
           </button>
         </div>
 
@@ -206,54 +202,63 @@ const MainLayout = ({ children }) => {
           <ul className="nav-list">
             {menuItems.map((item) => (
               <li key={item.key} className="nav-item">
-                <div
-                  className={`nav-link ${isActive(item.path) ? 'active' : ''} ${
-                    item.submenu ? 'has-submenu' : ''
-                  }`}
-                  onClick={() => item.submenu && toggleSubmenu(item.key)}
-                >
-                  {item.submenu ? (
-                    <>
-                      <span className="nav-icon">{item.icon}</span>
-                      {!sidebarCollapsed && (
-                        <>
-                          <span className="nav-text">{item.title}</span>
-                          <span className="submenu-arrow">
-                            {expandedMenus[item.key] ? <ChevronDown /> : <ChevronRight />}
-                          </span>
-                        </>
-                      )}
+                {item.submenu ? (
+                  // Items WITH submenu
+                  <>
+                    <div
+                      className={`nav-link ${isActive(item.path) ? 'active' : ''} has-submenu`}
+                      style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}
+                      onClick={() => toggleSubmenu(item.key)}
+                    >
+                        <span className="nav-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, flexShrink: 0 }}>
+{item.icon}</span>
+                       {!sidebarCollapsed && (
+    <>
+      <span className="nav-text" style={{ flex: 1, textAlign: 'left' }}>{item.title}</span>
+      <span className="submenu-arrow" style={{ flexShrink: 0 }}>
+        {expandedMenus[item.key] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+      </span>
+    </>
+  )}
                       {item.badge && !sidebarCollapsed && (
                         <span className="nav-badge">{item.badge}</span>
                       )}
-                    </>
-                  ) : (
-                    <Link to={item.path} className="nav-link-inner">
-                      <span className="nav-icon">{item.icon}</span>
-                      {!sidebarCollapsed && (
-                        <>
-                          <span className="nav-text">{item.title}</span>
-                          {item.badge && <span className="nav-badge">{item.badge}</span>}
-                        </>
-                      )}
-                    </Link>
-                  )}
-                </div>
+                    </div>
 
-                {/* Submenu */}
-                {item.submenu && expandedMenus[item.key] && !sidebarCollapsed && (
-                  <ul className="submenu">
-                    {item.submenu.map((subitem, index) => (
-                      <li key={index} className="submenu-item">
-                        <Link
-                          to={subitem.path}
-                          className={`submenu-link ${isActive(subitem.path) ? 'active' : ''}`}
-                        >
-                          <span className="submenu-text">{subitem.title}</span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
+                    {/* Submenu */}
+                    {expandedMenus[item.key] && !sidebarCollapsed && (
+                      <ul className="submenu">
+                        {item.submenu.map((subitem, index) => (
+                          <li key={index} className="submenu-item">
+                            <Link
+                              to={subitem.path}
+                              className={`submenu-link ${isActive(subitem.path) ? 'active' : ''}`}
+                            >
+                              <span className="submenu-text">{subitem.title}</span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                ) : (
+                  // Items WITHOUT submenu
+                  // no-submenu branch
+<Link
+  to={item.path}
+  className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
+  style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}
+>
+  <span className="nav-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, flexShrink: 0 }}>
+    {item.icon}
+  </span>
+  {!sidebarCollapsed && (
+    <>
+      <span className="nav-text" style={{ flex: 1, textAlign: 'left' }}>{item.title}</span>
+      {item.badge && <span className="nav-badge">{item.badge}</span>}
+    </>
+  )}
+</Link>
                 )}
               </li>
             ))}

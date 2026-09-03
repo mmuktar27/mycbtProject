@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { 
+import {
   GraduationCap,    // for GraduationCap
   UserPlus,         // for UserPlus
   Banknote,         // for Banknote
@@ -9,166 +9,80 @@ import {
   Laptop,           // for Laptop
   Users,            // for Users
   ClipboardCheck,   // for ClipboardCheck
-  ArrowUp,          // for ArrowUp
-  ArrowDown,        // for ArrowDown
   CalendarDays,     // for CalendarDays
-  TriangleAlert     // for FaExclamationTriangle
+  Loader2,          // for loading state
+  AlertCircle       // for error state
 } from 'lucide-react';
+import { useDashboardData } from '../hooks/useDashboardData';
 import './Dashboard.css';
 
 const Dashboard = () => {
-  const [stats, setStats] = useState({
-    totalStudents: 1250,
-    newAdmissions: 45,
-    feeCollection: 3250000,
-    pendingResults: 23,
-    activeExams: 5,
-    totalStaff: 85,
-    attendanceToday: 92.5,
-    pendingReports: 12
-  });
+  const currentYear = new Date().getFullYear();
+  const academicYear = `${currentYear}/${currentYear + 1}`; // adjust if you pull this from school-settings instead
 
-  const [recentActivities, setRecentActivities] = useState([
-    {
-      id: 1,
-      type: 'admission',
-      message: 'New admission application received',
-      student: 'John Doe',
-      time: '10 minutes ago'
-    },
-    {
-      id: 2,
-      type: 'fee',
-      message: 'Fee payment received',
-      student: 'Jane Smith',
-      amount: 45000,
-      time: '25 minutes ago'
-    },
-    {
-      id: 3,
-      type: 'result',
-      message: 'Results submitted for approval',
-      class: 'SS3 Mathematics',
-      time: '1 hour ago'
-    },
-    {
-      id: 4,
-      type: 'exam',
-      message: 'CBT exam completed',
-      exam: 'Mid-term Physics',
-      time: '2 hours ago'
-    },
-    {
-      id: 5,
-      type: 'staff',
-      message: 'New staff member added',
-      staff: 'Mr. Williams',
-      time: '3 hours ago'
-    }
-  ]);
-
-  const [upcomingEvents, setUpcomingEvents] = useState([
-    {
-      id: 1,
-      title: 'Mid-term Examinations',
-      date: '2026-02-10',
-      type: 'exam',
-      classes: 'All Classes'
-    },
-    {
-      id: 2,
-      title: 'Fee Payment Deadline',
-      date: '2026-02-15',
-      type: 'fee',
-      classes: 'All Students'
-    },
-    {
-      id: 3,
-      title: 'Report Card Distribution',
-      date: '2026-02-20',
-      type: 'report',
-      classes: 'All Classes'
-    },
-    {
-      id: 4,
-      title: 'Parent-Teacher Meeting',
-      date: '2026-02-25',
-      type: 'meeting',
-      classes: 'All Classes'
-    }
-  ]);
+  const {
+    isLoading,
+    isError,
+    stats,
+    recentActivities,
+    upcomingEvents
+  } = useDashboardData(academicYear);
 
   const statCards = [
     {
       title: 'Total Students',
-      value: stats.totalStudents.toLocaleString(),
+      value: (stats.totalStudents || 0).toLocaleString(),
       icon: <GraduationCap />,
       color: '#3b82f6',
-      change: '+5.2%',
-      trend: 'up',
       link: '/students'
     },
     {
       title: 'New Admissions',
-      value: stats.newAdmissions,
+      value: stats.newAdmissions || 0,
       icon: <UserPlus />,
       color: '#10b981',
-      change: '+12',
-      trend: 'up',
       link: '/admission'
     },
     {
       title: 'Fee Collection',
-      value: `₦${(stats.feeCollection / 1000000).toFixed(1)}M`,
+      value: `₦${((stats.feeCollection || 0) / 1000000).toFixed(1)}M`,
       icon: <Banknote />,
       color: '#f59e0b',
-      change: '+8.5%',
-      trend: 'up',
       link: '/fees'
     },
     {
       title: 'Active CBT Exams',
-      value: stats.activeExams,
+      value: stats.activeExams || 0,
       icon: <Laptop />,
       color: '#8b5cf6',
-      change: '2 ongoing',
-      trend: 'neutral',
       link: '/cbt'
     },
     {
       title: 'Pending Results',
-      value: stats.pendingResults,
+      value: stats.pendingResults || 0,
       icon: <LineChart />,
       color: '#ef4444',
-      change: 'Need approval',
-      trend: 'warning',
       link: '/results'
     },
     {
       title: 'Total Staff',
-      value: stats.totalStaff,
+      value: stats.totalStaff || 0,
       icon: <Users />,
       color: '#06b6d4',
-      change: '+3',
-      trend: 'up',
       link: '/staff'
     },
     {
       title: 'Attendance Today',
-      value: `${stats.attendanceToday}%`,
+      value: `${stats.attendanceToday || 0}%`,
       icon: <ClipboardCheck />,
       color: '#84cc16',
-      change: '+2.3%',
-      trend: 'up',
       link: '/attendance'
     },
     {
       title: 'Pending Reports',
-      value: stats.pendingReports,
+      value: stats.pendingReports || 0,
       icon: <FileText />,
       color: '#f97316',
-      change: 'To generate',
-      trend: 'warning',
       link: '/reportcards'
     }
   ];
@@ -185,6 +99,10 @@ const Dashboard = () => {
         return <Laptop className="activity-icon exam" />;
       case 'staff':
         return <Users className="activity-icon staff" />;
+      case 'student':
+        return <GraduationCap className="activity-icon student" />;
+      case 'attendance':
+        return <ClipboardCheck className="activity-icon attendance" />;
       default:
         return null;
     }
@@ -200,6 +118,20 @@ const Dashboard = () => {
     return typeMap[type] || '';
   };
 
+  // Relative time for activity feed ("10 minutes ago") from an ISO timestamp
+  const formatRelativeTime = (isoString) => {
+    if (!isoString) return '';
+    const diffMs = Date.now() - new Date(isoString).getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+  };
+
+  // Countdown label for events ("Today", "Tomorrow", "In 5 days") from an event's date
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const today = new Date();
@@ -208,9 +140,27 @@ const Dashboard = () => {
 
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Tomorrow';
-    if (diffDays < 7) return `In ${diffDays} days`;
+    if (diffDays < 7 && diffDays > 0) return `In ${diffDays} days`;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
+
+  if (isLoading) {
+    return (
+      <div className="dashboard-status">
+        <Loader2 className="spin" />
+        <p>Loading dashboard...</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="dashboard-status">
+        <AlertCircle />
+        <p>Failed to load dashboard data. Please try refreshing the page.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard">
@@ -222,11 +172,11 @@ const Dashboard = () => {
         </div>
         <div className="date-info">
           <CalendarDays />
-          <span>{new Date().toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+          <span>{new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
           })}</span>
         </div>
       </div>
@@ -239,12 +189,6 @@ const Dashboard = () => {
               <div className="stat-header">
                 <div className="stat-icon-wrapper">
                   {card.icon}
-                </div>
-                <div className="stat-trend">
-                  {card.trend === 'up' && <ArrowUp className="trend-up" />}
-                  {card.trend === 'down' && <ArrowDown className="trend-down" />}
-                  {card.trend === 'warning' && <TriangleAlert className="trend-warning" />}
-                  <span className={`trend-text ${card.trend}`}>{card.change}</span>
                 </div>
               </div>
               <div className="stat-body">
@@ -278,13 +222,13 @@ const Dashboard = () => {
                       <p className="activity-message">{activity.message}</p>
                       <div className="activity-details">
                         {activity.student && <span className="detail-text">{activity.student}</span>}
-                        {activity.amount && <span className="detail-amount">₦{activity.amount.toLocaleString()}</span>}
+                        {activity.amount && <span className="detail-amount">₦{Number(activity.amount).toLocaleString()}</span>}
                         {activity.class && <span className="detail-text">{activity.class}</span>}
                         {activity.exam && <span className="detail-text">{activity.exam}</span>}
                         {activity.staff && <span className="detail-text">{activity.staff}</span>}
                       </div>
                     </div>
-                    <span className="activity-time">{activity.time}</span>
+                    <span className="activity-time">{formatRelativeTime(activity.time)}</span>
                   </div>
                 ))}
               </div>
@@ -308,15 +252,15 @@ const Dashboard = () => {
                 {upcomingEvents.map((event) => (
                   <div key={event.id} className={`event-item ${getEventTypeClass(event.type)}`}>
                     <div className="event-date">
-                      <span className="event-day">{new Date(event.date).getDate()}</span>
+                      <span className="event-day">{new Date(event.eventDate).getDate()}</span>
                       <span className="event-month">
-                        {new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}
+                        {new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short' })}
                       </span>
                     </div>
                     <div className="event-content">
                       <h4 className="event-title">{event.title}</h4>
                       <p className="event-classes">{event.classes}</p>
-                      <span className="event-countdown">{formatDate(event.date)}</span>
+                      <span className="event-countdown">{formatDate(event.eventDate)}</span>
                     </div>
                   </div>
                 ))}
@@ -358,5 +302,6 @@ const Dashboard = () => {
       </div>
     </div>
   );
-}
+};
+
 export default Dashboard;

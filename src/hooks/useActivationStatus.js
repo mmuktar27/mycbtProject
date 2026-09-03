@@ -41,6 +41,10 @@ const checkActivationStatus = async (systemId) => {
 };
 
 // Local storage utilities
+// NOTE: cache is not keyed by systemId. Fine for a single-machine desktop
+// app; if this app can ever run across multiple machines sharing the same
+// browser profile/storage, key this by systemId to avoid showing one
+// machine's cached activation state on another.
 const getStoredActivation = () => {
   try {
     const stored = localStorage.getItem(CACHE_KEY);
@@ -49,7 +53,6 @@ const getStoredActivation = () => {
     const data = JSON.parse(stored);
     const age = Date.now() - (data.timestamp || 0);
 
-    // Return null if cache expired
     if (age > CACHE_EXPIRY_MS) {
       localStorage.removeItem(CACHE_KEY);
       return null;
@@ -82,11 +85,15 @@ export const useActivationStatus = () => {
     queryKey: ['systemId'],
     queryFn: fetchSystemId,
     staleTime: Infinity,
-    gcTime: Infinity, // formerly cacheTime
+    gcTime: Infinity,
     retry: 2,
   });
 
   // Fetch activation status
+  // NOTE: onSuccess/onError are NOT supported on useQuery in React Query v5
+  // (removed, not deprecated — they're silently ignored if you pass them).
+  // Persisting to localStorage/local state has to happen via an effect
+  // watching `data`, below.
   const activationQuery = useQuery({
     queryKey: ['activationStatus', systemIdQuery.data],
     queryFn: () => checkActivationStatus(systemIdQuery.data),
@@ -94,16 +101,24 @@ export const useActivationStatus = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000,
     retry: 1,
-    onSuccess: (data) => {
-      if (data) {
-        setStoredActivation(data);
-        setCachedData(data);
-      }
-    },
-    onError: (err) => {
-      console.error('Activation status query error:', err.message);
-    },
   });
+
+  // Persist every successful fetch (initial or background) to localStorage
+  // and to local state. This is the piece that was silently broken by the
+  // v5 onSuccess removal — without it, the cache never updates past the
+  // very first value written to localStorage.
+  useEffect(() => {
+    if (activationQuery.data) {
+      setStoredActivation(activationQuery.data);
+      setCachedData(activationQuery.data);
+    }
+  }, [activationQuery.data]);
+
+  useEffect(() => {
+    if (activationQuery.error) {
+      console.error('Activation status query error:', activationQuery.error.message);
+    }
+  }, [activationQuery.error]);
 
   // Background sync effect
   useEffect(() => {
@@ -127,12 +142,12 @@ export const useActivationStatus = () => {
     };
   }, [systemIdQuery.data, queryClient]);
 
-  // Determine which data to display
+  // Determine which data to display: fresh data wins, cached data is the
+  // fallback while fresh data is unavailable (loading, error, or not yet fetched).
   const displayData = activationQuery.data || cachedData || {};
 
-  // Safe status accessor
   const getStatus = () => {
-    if (activationQuery.isLoading && cachedData) {
+    if (!activationQuery.data && cachedData) {
       return { ...cachedData, isCached: true };
     }
     return {
@@ -143,10 +158,17 @@ export const useActivationStatus = () => {
 
   const status = getStatus();
 
+  // "Loading" should only be true when we have genuinely nothing to show —
+  // if we already have a cached value, paint it immediately and let fresh
+  // data replace it silently in the background. This is the fix for the
+  // "user sees a loading state before seeing activated/not" issue.
+  const hasNothingToShow = !cachedData && !activationQuery.data;
+  const isLoading = (systemIdQuery.isLoading || activationQuery.isLoading) && hasNothingToShow;
+
   return {
     // State flags
-    isLoading: systemIdQuery.isLoading || activationQuery.isLoading,
-    isError: systemIdQuery.isError || activationQuery.isError,
+    isLoading,
+    isError: (systemIdQuery.isError || activationQuery.isError) && hasNothingToShow,
     isCached: status.isCached,
     error: systemIdQuery.error || activationQuery.error,
 

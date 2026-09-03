@@ -6,6 +6,7 @@ import './javascript-calculator.css';
 import './styles.inspinia.bundle.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 //import './bootstrap.min.css';
+import EditStudent from './components/students/EditStudent';
 
 import { Routes, Route,Navigate  } from "react-router-dom"
 
@@ -144,8 +145,9 @@ function App() {
         <Route path="/students" element={<MainLayout><Navigate to="/students/all" replace /></MainLayout>} />
         <Route path="/students/all" element={<MainLayout><StudentList /></MainLayout>} />
         <Route path="/students/add" element={<MainLayout><AddStudent /></MainLayout>} />
-        <Route path="/students/profile" element={<MainLayout><StudentProfile /></MainLayout>} />
+       <Route path="/students/profile/:studentId" element={<MainLayout><StudentProfile /></MainLayout>} />
         <Route path="/students/import" element={<MainLayout><BulkImport /></MainLayout>} />
+        <Route path="/students/edit/:studentId" element={<MainLayout><EditStudent /></MainLayout>} />
 
         {/* Admission Processing Routes */}
         <Route path="/admission" element={<MainLayout><Navigate to="/admission/new" replace /></MainLayout>} />

@@ -1,0 +1,527 @@
+/* StudentsList.css */
+
+.students-list-container {
+  padding: 24px;
+  max-width: 100%;
+}
+
+/* ---------- Header ---------- */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.header-left h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+.btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-secondary {
+  background-color: #ffffff;
+  color: #374151;
+  border-color: #d1d5db;
+}
+.btn-secondary:hover {
+  background-color: #f3f4f6;
+}
+
+.btn-danger {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+.btn-danger:hover {
+  background-color: #b91c1c;
+}
+
+/* ---------- Filters ---------- */
+.filters-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.search-box {
+  position: relative;
+  flex: 0 1 320px;   /* grow:0 stops it stretching to fill the row */
+  width: 100%;
+  max-width: 320px;
+  min-width: 220px;
+  height: 40px;
+  box-sizing: border-box;
+}
+
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.search-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 0 12px 0 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background-color: #ffffff;
+}
+.search-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.filter-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* THIS is the piece that was missing: the box + flex layout for the chip */
+.filter-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 26px 0 10px; /* right padding leaves room for the arrow */
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+.filter-group:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.filter-group svg {
+  width: 16px !important;
+  height: 16px !important;
+  flex-shrink: 0;
+  color: #6b7280;
+}
+
+.filter-group::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #9ca3af;
+  border-bottom: 2px solid #9ca3af;
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
+}
+
+.filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: none;           /* ← add this */
+  outline: none;
+  background: transparent;
+  padding: 0;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  min-width: 100px;
+  height: 100%;
+  flex: 1;
+}
+
+/* ---------- Loading & Empty states ---------- */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: #6b7280;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.empty-icon {
+  color: #d1d5db;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  color: #374151;
+  margin: 0 0 6px;
+}
+
+/* ---------- Table ---------- */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.students-table {
+  width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.students-table thead th {
+  text-align: left;
+  padding: 12px 16px;
+  background-color: #f9fafb;
+  color: #6b7280;
+  font-weight: 700 !important;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.students-table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  vertical-align: middle;
+}
+
+.students-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.students-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.student-id,
+.admission-number {
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.student-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.student-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.student-name {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.name-primary {
+  font-weight: 600;
+  color: #111827;
+}
+
+.name-secondary {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.class-info,
+.date-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background-color: #eef2ff;
+  color: #4338ca;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---------- Status badges ---------- */
+/* Scoped under .students-table to win against any global `.badge` class
+   (e.g. from a UI framework) that may otherwise override these colors —
+   same root cause as the earlier icon-sizing issue. Forcing opacity/filter
+   here too, in case a global rule (e.g. targeting disabled-looking states)
+   is washing these out. */
+.students-table .badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  opacity: 1 !important;
+  filter: none !important;
+  pointer-events: none;
+}
+
+.students-table .badge-success {
+  background-color: #dcfce7 !important;
+  color: #166534 !important;
+  border-color: #86efac;
+}
+
+.students-table .badge-info {
+  background-color: #dbeafe !important;
+  color: #1e40af !important;
+  border-color: #93c5fd;
+}
+
+.students-table .badge-warning {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+  border-color: #fcd34d;
+}
+
+.students-table .badge-danger {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+  border-color: #fca5a5;
+}
+
+.students-table .badge-secondary {
+  background-color: #f3f4f6 !important;
+  color: #374151 !important;
+  border-color: #d1d5db;
+}
+
+/* ---------- Action buttons ---------- */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  background-color: transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.btn-icon:hover {
+  background-color: #f3f4f6;
+  transform: scale(1.08);
+}
+
+/* Guards against a global svg reset (e.g. `svg { width: 1em; height: 1em }`)
+   overriding the size passed to the lucide-react icon components. This rule
+   is scoped specifically to action-button icons so it won't affect other
+   svgs elsewhere in the app. */
+.action-buttons .btn-icon svg {
+  width: 22px !important;
+  height: 22px !important;
+  flex-shrink: 0;
+}
+
+.btn-view:hover {
+  background-color: #eff6ff;
+}
+
+.btn-edit:hover {
+  background-color: #ecfdf5;
+}
+
+.btn-delete:hover {
+  background-color: #fef2f2;
+}
+
+/* ---------- Pagination ---------- */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn-pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-pagination:hover:not(:disabled) {
+  background-color: #f3f4f6;
+}
+
+.btn-pagination:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  color: #6b7280;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.total-count {
+  color: #9ca3af;
+}
+
+/* ---------- Modal ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(17, 24, 39, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-content {
+  background-color: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  padding: 18px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #111827;
+}
+
+.modal-body {
+  padding: 20px;
+  color: #374151;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.warning-text {
+  color: #b45309;
+  font-size: 0.825rem;
+  margin-top: 8px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid #e5e7eb;
+}
