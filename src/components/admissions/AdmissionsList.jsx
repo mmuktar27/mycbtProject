@@ -9,6 +9,11 @@ import {
 } from 'lucide-react';
 import './AdmissionsList.css';
 import ExportModal from './ExportModal';
+import AdmissionActionModal from './AdmissionActionModal';
+
+
+
+
 const AdmissionsList = () => {
   const navigate = useNavigate();
   const [admissions, setAdmissions] = useState([]);
@@ -426,42 +431,151 @@ const getActionButtons = (admission) => {
       </div>
 
       {/* Filters and Search */}
-      <div className="filters-section">
-        <div className="search-box">
-          <Search className="search-icon" size={20} />
-          <input
-            type="text"
-            placeholder="Search by name, application ID, or phone..."
-            value={searchTerm}
-            onChange={handleSearch}
-            className="search-input"
-          />
-        </div>
+  <div style={{
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '12px',
+  alignItems: 'center',
+  marginBottom: '20px',
+  padding: '14px 16px',
+  backgroundColor: '#f9fafb',
+  border: '1px solid #e5e7eb',
+  borderRadius: '10px'
+}}>
+  {/* Search Box */}
+  <div style={{ position: 'relative', width: '320px', height: '40px' }}>
+    <Search
+      size={20}
+      style={{
+        position: 'absolute',
+        left: '12px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        color: '#9ca3af',
+        pointerEvents: 'none'
+      }}
+    />
+    <input
+      type="text"
+      placeholder="Search by name, application ID, or phone..."
+      value={searchTerm}
+      onChange={handleSearch}
+      style={{
+        width: '100%',
+        height: '100%',
+        padding: '0 12px 0 40px',
+        border: '1px solid #d1d5db',
+        borderRadius: '8px',
+        fontSize: '0.9rem',
+        backgroundColor: '#ffffff',
+        boxSizing: 'border-box',
+        outline: 'none'
+      }}
+    />
+  </div>
 
-        <div className="filter-controls">
-          <div className="filter-group">
-            <Filter size={18} />
-            <select value={filterStatus} onChange={handleStatusFilter} className="filter-select">
-              <option value="">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="under_review">Under Review</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
-          </div>
+  {/* Filter Controls */}
+  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
 
-          <div className="filter-group">
-            <select value={filterClass} onChange={handleClassFilter} className="filter-select">
-              <option value="">All Classes</option>
-              {classes.map(cls => (
-                <option key={cls.id} value={cls.className}>
-                  {cls.className}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
+    {/* Status Filter */}
+    <div style={{
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      height: '40px',
+      padding: '0 28px 0 10px',
+      backgroundColor: '#ffffff',
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
+      boxSizing: 'border-box'
+    }}>
+      <Filter size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
+      <select
+        value={filterStatus}
+        onChange={handleStatusFilter}
+        style={{
+          appearance: 'none',
+          WebkitAppearance: 'none',
+          MozAppearance: 'none',
+          border: 'none',
+          outline: 'none',
+          background: 'transparent',
+          fontSize: '0.875rem',
+          color: '#374151',
+          cursor: 'pointer',
+          minWidth: '100px',
+          height: '100%'
+        }}
+      >
+        <option value="">All Status</option>
+        <option value="pending">Pending</option>
+        <option value="under_review">Under Review</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+      </select>
+      <span style={{
+        position: 'absolute',
+        right: '10px',
+        top: '50%',
+        width: '8px',
+        height: '8px',
+        borderRight: '2px solid #9ca3af',
+        borderBottom: '2px solid #9ca3af',
+        transform: 'translateY(-65%) rotate(45deg)',
+        pointerEvents: 'none'
+      }} />
+    </div>
+
+    {/* Class Filter */}
+    <div style={{
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      height: '40px',
+      padding: '0 28px 0 10px',
+      backgroundColor: '#ffffff',
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
+      boxSizing: 'border-box'
+    }}>
+      <select
+        value={filterClass}
+        onChange={handleClassFilter}
+        style={{
+          appearance: 'none',
+          WebkitAppearance: 'none',
+          MozAppearance: 'none',
+          border: 'none',
+          outline: 'none',
+          background: 'transparent',
+          fontSize: '0.875rem',
+          color: '#374151',
+          cursor: 'pointer',
+          minWidth: '100px',
+          height: '100%'
+        }}
+      >
+        <option value="">All Classes</option>
+        {classes.map(cls => (
+          <option key={cls.id} value={cls.className}>{cls.className}</option>
+        ))}
+      </select>
+      <span style={{
+        position: 'absolute',
+        right: '10px',
+        top: '50%',
+        width: '8px',
+        height: '8px',
+        borderRight: '2px solid #9ca3af',
+        borderBottom: '2px solid #9ca3af',
+        transform: 'translateY(-65%) rotate(45deg)',
+        pointerEvents: 'none'
+      }} />
+    </div>
+
+  </div>
+</div>
 
       {/* Applications Table */}
       {loading ? (
@@ -581,388 +695,6 @@ const getActionButtons = (admission) => {
         </>
       )}
 
-      {/* Action Modal */}
-  {showActionModal && (
-  <div className="modal-overlay" onClick={() => !isSubmitting && setShowActionModal(false)}>
-    <div className="modal-content-wide" onClick={(e) => e.stopPropagation()}>
-      <div className="modal-header">
-        <h3>
-          {actionType === 'approve-and-enroll' && '✅ Approve & Enroll Student'}
-          {actionType === 'reject' && '❌ Reject Application'}
-          {actionType === 'review' && '📋 Start Review'}
-        </h3>
-        <button 
-          className="modal-close"
-          onClick={() => !isSubmitting && setShowActionModal(false)}
-          disabled={isSubmitting}
-        >
-          <X size={20} />
-        </button>
-      </div>
-      
-      <div className="modal-body">
-        {/* Applicant Summary - Full Width */}
-        <div className="applicant-summary">
-          <div className="summary-grid">
-            <div>
-              <strong>Applicant:</strong> {selectedAdmission?.firstName}{' '}
-              {selectedAdmission?.lastName}
-            </div>
-            <div>
-              <strong>Applied Class:</strong> {selectedAdmission?.appliedClass} 
-              {selectedAdmission?.appliedSection && ` - Section ${selectedAdmission?.appliedSection}`}
-            </div>
-            <div>
-              <strong>Application ID:</strong> {selectedAdmission?.applicationId}
-            </div>
-            <div>
-              <strong>Gender:</strong> {selectedAdmission?.gender}
-            </div>
-          </div>
-        </div>
-
-        {actionType === 'approve-and-enroll' && (
-          <>
-            {/* Class Assignment Section */}
-            <div className="form-section-header">
-              <h4>📚 Class Assignment</h4>
-            </div>
-
-            <div className="form-grid-2col">
-{/* Class Selection */}
-<div className="form-group">
-  <label>
-    Assign to Class (Optional - defaults to applied class)
-  </label>
-  <select
-    value={actionData.selectedClassId || ''}
-    onChange={(e) => {
-      const classId = e.target.value;
-      const selectedClass = classes.find(c => c.id === parseInt(classId));
-      setActionData({
-        ...actionData,
-        selectedClassId: classId,
-        selectedClassName: selectedClass?.className || '',
-        section: selectedClass?.section || '',
-        availableSeats: selectedClass ? (selectedClass.capacity - (selectedClass.currentStudents || 0)) : 0
-      });
-    }}
-    disabled={isSubmitting}
-    className="form-select"
-  >
-    <option value="">
-      Use Applied Class: {selectedAdmission?.appliedClass}
-      {selectedAdmission?.appliedSection ? ` - Section ${selectedAdmission?.appliedSection}` : ''}
-    </option>
-  {classes
-  .filter(cls => {
-    const appliedClass = selectedAdmission?.appliedClass?.toUpperCase() || '';
-    const appliedCategory = appliedClass.includes('SS') ? 'Senior' :
-                           appliedClass.includes('JSS') ? 'Junior' :
-                           'Primary';
-    return cls.classCategory === appliedCategory;
-  })
-  .map(cls => {
-    const availableSeats = cls.capacity - (cls.currentStudents || 0);
-    const isFull = availableSeats <= 0;
-    
-    return (
-      <option 
-        key={cls.id} 
-        value={cls.id}
-        disabled={isFull}
-      >
-        {cls.className} {cls.section ? `- Section ${cls.section}` : ''} 
-        {' '}({availableSeats} seats)
-        {isFull ? ' - FULL' : ''}
-      </option>
-    );
-  })}
-  </select>
-  
-  {actionData.selectedClassId ? (
-    <div className="field-hint success">
-      ✓ {actionData.availableSeats || 0} seats available
-    </div>
-  ) : (
-    <div className="field-hint">
-      Will use applied class: {selectedAdmission?.appliedClass}
-      {selectedAdmission?.appliedSection ? ` - Section ${selectedAdmission?.appliedSection}` : ''}
-    </div>
-  )}
-</div>
-
-              {/* Roll Number */}
-              <div className="form-group">
-                <label>Roll Number (Optional)</label>
-                <input
-                  type="text"
-                  value={actionData.rollNumber || ''}
-                  onChange={(e) =>
-                    setActionData({ ...actionData, rollNumber: e.target.value })
-                  }
-                  placeholder="e.g., 001, 045"
-                  disabled={isSubmitting}
-                  className="form-input"
-                />
-                <div className="field-hint">Leave blank for auto-assignment</div>
-              </div>
-            </div>
-
-            {/* Warning if class changed */}
-        {/* Warning if class changed */}
-{actionData.selectedClassId && 
- actionData.selectedClassName !== selectedAdmission?.appliedClass && (
-  <div className="alert alert-warning">
-    <AlertCircle size={18} />
-    <div>
-      <strong>Class Change Notice</strong>
-      <p>Student applied for <strong>{selectedAdmission?.appliedClass}</strong> but will be assigned to <strong>{actionData.selectedClassName} {actionData.selectedSection ? `- Section ${actionData.selectedSection}` : ''}</strong></p>
-    </div>
-  </div>
-)}
-
-            {/* Interview/Assessment Section */}
-            <div className="form-section-header">
-              <h4>📝 Assessment Details</h4>
-            </div>
-
-            <div className="form-grid-2col">
-              <div className="form-group">
-                <label>Reviewed By</label>
-                <input
-                  type="text"
-                  value={actionData.reviewedBy}
-                  onChange={(e) =>
-                    setActionData({ ...actionData, reviewedBy: e.target.value })
-                  }
-                  disabled={isSubmitting}
-                  className="form-input"
-                  placeholder="Enter reviewer name"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Interview Scheduled</label>
-                <input
-                  type="datetime-local"
-                  value={actionData.interviewScheduled}
-                  onChange={(e) =>
-                    setActionData({
-                      ...actionData,
-                      interviewScheduled: e.target.value
-                    })
-                  }
-                  disabled={isSubmitting}
-                  className="form-input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Entrance Test Score</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={actionData.entranceTestScore}
-                  onChange={(e) =>
-                    setActionData({
-                      ...actionData,
-                      entranceTestScore: e.target.value
-                    })
-                  }
-                  placeholder="Score out of 100"
-                  disabled={isSubmitting}
-                  className="form-input"
-                />
-                <div className="field-hint">Enter score from 0-100</div>
-              </div>
-
-              <div className="form-group full-width">
-                <label>Interview Notes</label>
-                <textarea
-                  value={actionData.interviewNotes}
-                  onChange={(e) =>
-                    setActionData({ ...actionData, interviewNotes: e.target.value })
-                  }
-                  rows="4"
-                  placeholder="Add any observations or special notes..."
-                  disabled={isSubmitting}
-                  className="form-textarea"
-                />
-              </div>
-            </div>
-
-            {/* Info Box */}
-            <div className="alert alert-info">
-              <Info size={20} />
-              <div>
-                <strong>Approval Confirmation</strong>
-                <ul className="info-list">
-                  <li>✓ Approve the application</li>
-                  <li>✓ Create student record immediately</li>
-                  <li>✓ Assign to:<strong>
-  {actionData.selectedClassName || selectedAdmission?.appliedClass}
-  {actionData.selectedSection || selectedAdmission?.appliedSection 
-    ? ` - Section ${actionData.selectedSection || selectedAdmission?.appliedSection}` 
-    : ''}
-</strong></li>
-                  <li>✓ Generate Student ID and Admission Number</li>
-                  <li>✓ Enable PDF admission letter download</li>
-                </ul>
-              </div>
-            </div>
-          </>
-        )}
-
-        {actionType === 'reject' && (
-          <>
-            <div className="form-group">
-              <label>Reviewed By</label>
-              <input
-                type="text"
-                value={actionData.reviewedBy}
-                onChange={(e) =>
-                  setActionData({ ...actionData, reviewedBy: e.target.value })
-                }
-                disabled={isSubmitting}
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>
-                Rejection Reason <span className="required">*</span>
-              </label>
-              <textarea
-                value={actionData.rejectionReason}
-                onChange={(e) =>
-                  setActionData({ ...actionData, rejectionReason: e.target.value })
-                }
-                rows="5"
-                placeholder="Please provide a detailed reason for rejection..."
-                disabled={isSubmitting}
-                className="form-textarea"
-              />
-            </div>
-          </>
-        )}
-
-        {actionType === 'review' && (
-          <>
-            <div className="form-grid-2col">
-              <div className="form-group">
-                <label>Reviewed By</label>
-                <input
-                  type="text"
-                  value={actionData.reviewedBy}
-                  onChange={(e) =>
-                    setActionData({ ...actionData, reviewedBy: e.target.value })
-                  }
-                  disabled={isSubmitting}
-                  className="form-input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Interview Scheduled</label>
-                <input
-                  type="datetime-local"
-                  value={actionData.interviewScheduled}
-                  onChange={(e) =>
-                    setActionData({
-                      ...actionData,
-                      interviewScheduled: e.target.value
-                    })
-                  }
-                  disabled={isSubmitting}
-                  className="form-input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Entrance Test Score</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={actionData.entranceTestScore}
-                  onChange={(e) =>
-                    setActionData({
-                      ...actionData,
-                      entranceTestScore: e.target.value
-                    })
-                  }
-                  placeholder="Score out of 100"
-                  disabled={isSubmitting}
-                  className="form-input"
-                />
-              </div>
-
-              <div className="form-group full-width">
-                <label>Interview Notes</label>
-                <textarea
-                  value={actionData.interviewNotes}
-                  onChange={(e) =>
-                    setActionData({ ...actionData, interviewNotes: e.target.value })
-                  }
-                  rows="4"
-                  placeholder="Add any notes or observations..."
-                  disabled={isSubmitting}
-                  className="form-textarea"
-                />
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="modal-footer">
-        <button
-          onClick={() => setShowActionModal(false)}
-          className="btn btn-secondary"
-          disabled={isSubmitting}
-        >
-          <X size={18} /> Cancel
-        </button>
-        <button
-          onClick={handleActionSubmit}
-          className={`btn ${
-            actionType === 'approve-and-enroll'
-              ? 'btn-success'
-              : actionType === 'reject'
-              ? 'btn-danger'
-              : 'btn-primary'
-          }`}
-          disabled={isSubmitting}
-        >
-          {isSubmitting && <Loader size={18} className="spinner-inline" />}
-          {actionType === 'approve-and-enroll' && (
-            isSubmitting ? 'Approving...' : (
-              <>
-                <CheckCircle size={18} /> Approve & Enroll
-              </>
-            )
-          )}
-          {actionType === 'reject' && (
-            isSubmitting ? 'Rejecting...' : (
-              <>
-                <XCircle size={18} /> Reject Application
-              </>
-            )
-          )}
-          {actionType === 'review' && (
-            isSubmitting ? 'Processing...' : (
-              <>
-                <AlertCircle size={18} /> Start Review
-              </>
-            )
-          )}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
 
       {/* Dialog Component */}
       {dialog.isOpen && (
@@ -1016,7 +748,17 @@ const getActionButtons = (admission) => {
           </div>
         </div>
       )}
-
+<AdmissionActionModal
+  isOpen={showActionModal}
+  actionType={actionType}
+  selectedAdmission={selectedAdmission}
+  actionData={actionData}
+  setActionData={setActionData}
+  classes={classes}
+  isSubmitting={isSubmitting}
+  onClose={() => setShowActionModal(false)}
+  onSubmit={handleActionSubmit}
+/>
       <ExportModal
   isOpen={showExportModal}
   onClose={() => setShowExportModal(false)}

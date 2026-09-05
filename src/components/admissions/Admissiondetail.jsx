@@ -7,12 +7,10 @@ import {
   XCircle, Clock, Save, X, Loader, FileCheck, Heart, Globe,UserPlus
 } from 'lucide-react';
 import './AdmissionDetail.css';
-
+import AdmissionActionModal from './AdmissionActionModal';
 const AdmissionDetail = () => {
   const { applicationId } = useParams();
   const navigate = useNavigate();
-
-  // State Management
   const [admission, setAdmission] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -34,6 +32,35 @@ const AdmissionDetail = () => {
     fetchAdmissionDetail();
   }, [applicationId]);
 
+const [classes, setClasses] = useState([]);
+
+useEffect(() => {
+  fetchAdmissionDetail();
+  fetchClasses();
+}, [applicationId]);
+
+const fetchClasses = async () => {
+  try {
+    const response = await axios.get('/api/classes');
+    if (response.data.success) setClasses(response.data.data);
+  } catch (err) {
+    console.error('Error fetching classes:', err);
+  }
+};
+
+const handleActionClick = (type) => {
+  const resolvedType = type === 'approve' ? 'approve-and-enroll' : type;
+  setActionModal({ isOpen: true, type: resolvedType, loading: false });
+  setFormData({
+    reviewedBy: 'Admin',
+    rejectionReason: '',
+    interviewScheduled: '',
+    entranceTestScore: '',
+    interviewNotes: '',
+    selectedClassId: '',
+    rollNumber: ''
+  });
+};
   const fetchAdmissionDetail = async () => {
     try {
       setLoading(true);
@@ -54,54 +81,78 @@ const AdmissionDetail = () => {
     }
   };
 
-  const handleActionClick = (type) => {
-    setActionModal({ isOpen: true, type, loading: false });
-    setFormData({
-      reviewedBy: 'Admin',
-      rejectionReason: '',
-      interviewScheduled: '',
-      entranceTestScore: '',
-      interviewNotes: ''
-    });
-  };
+
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleActionSubmit = async () => {
-    try {
-      // Validation
-      if (actionModal.type === 'reject' && !formData.rejectionReason.trim()) {
-        alert('Please provide a rejection reason');
-        return;
+const handleActionSubmit = async () => {
+  try {
+    if (actionModal.type === 'approve-and-enroll') {
+      let finalClassId = formData.selectedClassId;
+
+      if (!finalClassId) {
+        const appliedClass = classes.find(c =>
+          c.className === admission.appliedClass && c.section === admission.appliedSection
+        );
+        if (appliedClass) {
+          finalClassId = appliedClass.id;
+        } else {
+          alert('Could not determine class assignment. Please select a class manually.');
+          return;
+        }
       }
 
       setActionModal({ ...actionModal, loading: true });
 
-      let status = '';
-      if (actionModal.type === 'approve') status = 'approved';
-      else if (actionModal.type === 'reject') status = 'rejected';
-      else if (actionModal.type === 'review') status = 'under_review';
-
-      const response = await axios.put(
-        `/api/admissions/${applicationId}/status`,
-        { ...formData, status }
+      const response = await axios.post(
+        `/api/admissions/${applicationId}/approve-and-enroll`,
+        {
+          reviewedBy: formData.reviewedBy,
+          interviewScheduled: formData.interviewScheduled,
+          interviewNotes: formData.interviewNotes,
+          entranceTestScore: formData.entranceTestScore,
+          selectedClassId: finalClassId,
+          section: formData.selectedSection || admission.appliedSection,
+          rollNumber: formData.rollNumber
+        }
       );
 
       if (response.data.success) {
-        alert(response.data.message);
+        alert(
+          `Student enrolled!\n\nStudent ID: ${response.data.data.studentId}\nAdmission Number: ${response.data.data.admissionNumber}\nStudent Number: ${response.data.data.studentNumber}`
+        );
         setActionModal({ isOpen: false, type: '', loading: false });
         fetchAdmissionDetail();
       }
-    } catch (err) {
-      console.error('Error updating status:', err);
-      alert(err.response?.data?.message || 'Failed to update admission');
-    } finally {
-      setActionModal({ ...actionModal, loading: false });
+      return;
     }
-  };
+
+    // reject / review — unchanged
+    if (actionModal.type === 'reject' && !formData.rejectionReason.trim()) {
+      alert('Please provide a rejection reason');
+      return;
+    }
+
+    setActionModal({ ...actionModal, loading: true });
+
+    const status = actionModal.type === 'reject' ? 'rejected' : 'under_review';
+    const response = await axios.put(`/api/admissions/${applicationId}/status`, { ...formData, status });
+
+    if (response.data.success) {
+      alert(response.data.message);
+      setActionModal({ isOpen: false, type: '', loading: false });
+      fetchAdmissionDetail();
+    }
+  } catch (err) {
+    console.error('Error updating status:', err);
+    alert(err.response?.data?.message || 'Failed to update admission');
+  } finally {
+    setActionModal({ ...actionModal, loading: false });
+  }
+};
 
   const handleConvertToStudent = async () => {
     if (!window.confirm('Are you sure you want to convert this approved admission to a student? This action cannot be undone.')) {
@@ -236,7 +287,7 @@ const AdmissionDetail = () => {
   if (error) {
     return (
       <div className="admission-detail-container">
-        <button onClick={() => navigate('/admissions')} className="btn btn-secondary">
+        <button onClick={() => navigate('/admissions/approved')} className="btn btn-secondary">
           <ArrowLeft size={18} /> Back to Admissions
         </button>
         <div className="error-state">
@@ -609,150 +660,20 @@ const AdmissionDetail = () => {
       </div>
 
       {/* Action Modal */}
-      {actionModal.isOpen && (
-        <div className="modal-overlay" onClick={() => !actionModal.loading && setActionModal({ ...actionModal, isOpen: false })}>
-          <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>
-                {actionModal.type === 'approve' && <>
-                  <CheckCircle size={24} /> Approve Application
-                </>}
-                {actionModal.type === 'reject' && <>
-                  <XCircle size={24} /> Reject Application
-                </>}
-                {actionModal.type === 'review' && <>
-                  <AlertCircle size={24} /> Start Review
-                </>}
-              </h2>
-              <button
-                className="close-button"
-                onClick={() => !actionModal.loading && setActionModal({ ...actionModal, isOpen: false })}
-                disabled={actionModal.loading}
-              >
-                <X size={24} />
-              </button>
-            </div>
 
-            <div className="modal-body">
-              <div className="applicant-summary-modal">
-                <p><strong>Applicant:</strong> {admission.firstName} {admission.lastName}</p>
-                <p><strong>Application ID:</strong> {admission.applicationId}</p>
-                <p><strong>Applied Class:</strong> {admission.appliedClass}</p>
-              </div>
 
-              {/* Reviewed By */}
-              <div className="form-group">
-                <label>Reviewed By *</label>
-                <input
-                  type="text"
-                  name="reviewedBy"
-                  value={formData.reviewedBy}
-                  onChange={handleFormChange}
-                  placeholder="Your name or username"
-                  disabled={actionModal.loading}
-                />
-              </div>
-
-              {/* Rejection Reason - Only for Reject */}
-              {actionModal.type === 'reject' && (
-                <div className="form-group">
-                  <label>Rejection Reason *</label>
-                  <textarea
-                    name="rejectionReason"
-                    value={formData.rejectionReason}
-                    onChange={handleFormChange}
-                    placeholder="Please provide a detailed reason for rejection..."
-                    rows="4"
-                    disabled={actionModal.loading}
-                  />
-                </div>
-              )}
-
-              {/* Review/Approve Additional Info */}
-              {(actionModal.type === 'review' || actionModal.type === 'approve') && (
-                <>
-                  <div className="form-group">
-                    <label>Interview Scheduled</label>
-                    <input
-                      type="datetime-local"
-                      name="interviewScheduled"
-                      value={formData.interviewScheduled}
-                      onChange={handleFormChange}
-                      disabled={actionModal.loading}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Entrance Test Score (out of 100)</label>
-                    <input
-                      type="number"
-                      name="entranceTestScore"
-                      value={formData.entranceTestScore}
-                      onChange={handleFormChange}
-                      min="0"
-                      max="100"
-                      placeholder="Enter score"
-                      disabled={actionModal.loading}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Interview Notes</label>
-                    <textarea
-                      name="interviewNotes"
-                      value={formData.interviewNotes}
-                      onChange={handleFormChange}
-                      placeholder="Add any observations or notes from the interview..."
-                      rows="3"
-                      disabled={actionModal.loading}
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="modal-footer">
-              <button
-                className="btn btn-secondary"
-                onClick={() => setActionModal({ ...actionModal, isOpen: false })}
-                disabled={actionModal.loading}
-              >
-                Cancel
-              </button>
-              <button
-                className={`btn ${
-                  actionModal.type === 'approve'
-                    ? 'btn-success'
-                    : actionModal.type === 'reject'
-                    ? 'btn-danger'
-                    : 'btn-primary'
-                }`}
-                onClick={handleActionSubmit}
-                disabled={actionModal.loading}
-              >
-                {actionModal.loading ? (
-                  <>
-                    <Loader size={18} className="spinner-small" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    {actionModal.type === 'approve' && <>
-                      <CheckCircle size={18} /> Approve
-                    </>}
-                    {actionModal.type === 'reject' && <>
-                      <XCircle size={18} /> Reject
-                    </>}
-                    {actionModal.type === 'review' && <>
-                      <AlertCircle size={18} /> Start Review
-                    </>}
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AdmissionActionModal
+  isOpen={actionModal.isOpen}
+  actionType={actionModal.type}
+  selectedAdmission={admission}
+  actionData={formData}
+  setActionData={setFormData}
+  classes={classes}
+  isSubmitting={actionModal.loading}
+  showClassAssignment={true}   // now matches AdmissionsList
+  onClose={() => setActionModal({ ...actionModal, isOpen: false })}
+  onSubmit={handleActionSubmit}
+/>
     </div>
   );
 };

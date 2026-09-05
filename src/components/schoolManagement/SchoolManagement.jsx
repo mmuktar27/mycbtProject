@@ -792,15 +792,17 @@ const renderSubjects = () => {
         <h3><Clock /> Academic Year & Sessions</h3>
         
         <div className="form-group">
-          <label>Academic Year</label>
-          <input
-            type="text"
-            name="academicYear"
-            value={schoolSettings.academicYear || ''}
-            onChange={handleSettingsChange}
-            placeholder="2024/2025"
-          />
-        </div>
+  <label>Academic Year <span style={{ fontWeight: 400, color: '#64748b' }}>(set from Academic Calendar)</span></label>
+  <input
+    type="text"
+    value={schoolSettings.academicYear || ''}
+    disabled
+    style={{ background: '#f1f5f9', cursor: 'not-allowed' }}
+  />
+  <p className="help-text-small">
+    To change the active academic year, go to the <strong>Academic Calendar</strong> tab and set a current term.
+  </p>
+</div>
 
         <div className="form-group">
           <label>Session Start Date</label>

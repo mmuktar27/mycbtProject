@@ -74,17 +74,16 @@ import QuestionBank from './components/schoolcbt/QuestionBank';
 import CBTLogin     from './components/schoolcbt/CBTLogin';
 import CBTComplete      from './components/schoolcbt/CBTComplete';
 import SchoolCandExam from './components/schoolcbt/SchoolCandExam';
+
+import PendingReview from './components/admissions/PendingReview';
+import RejectedApplications from './components/admissions/RejectedApplications';
+
+
 // Student Management
 //const StudentList = () => <div className="page-container"><h1>All Students</h1><p>Student list will be displayed here</p></div>;
 const AddStudent = () => <div className="page-container"><h1>Add New Student</h1><p>Add student form will be here</p></div>;
 //const StudentProfile = () => <div className="page-container"><h1>Student Profile</h1><p>Student profile details</p></div>;
 //const BulkImport = () => <div className="page-container"><h1>Bulk Import Students</h1><p>Import multiple students</p></div>;
-
-// Admission Processing
-const NewApplications = () => <div className="page-container"><h1>New Applications</h1><p>New admission applications</p></div>;
-const PendingReview = () => <div className="page-container"><h1>Pending Review</h1><p>Applications pending review</p></div>;
-const ApprovedApplications = () => <div className="page-container"><h1>Approved Applications</h1><p>Approved applications</p></div>;
-const RejectedApplications = () => <div className="page-container"><h1>Rejected Applications</h1><p>Rejected applications</p></div>;
 
 
 // Results Management

@@ -54,7 +54,9 @@ const AdmissionForm = () => {
     appliedSection: '', 
     previousSchool: '',
     previousClass: '',
-    academicYear: new Date().getFullYear() + '/' + (new Date().getFullYear() + 1),
+    admissionType: 'New',
+    entryTermId: '',
+     academicYear: '',
     
     // Documents
     birthCertificate: '',
@@ -84,7 +86,24 @@ const [selectedClassData, setSelectedClassData] = useState(null);
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
   const religions = ['Christianity', 'Islam', 'Traditional', 'Other'];
+const [currentAcademicYear, setCurrentAcademicYear] = useState(null); // { id, yearLabel, terms: [...] }
 
+useEffect(() => {
+  fetchClasses();
+  fetchAcademicYear();
+}, []);
+
+const fetchAcademicYear = async () => {
+  try {
+    const response = await axios.get('/api/academic-years');
+    if (response.data.success) {
+      const active = response.data.data.find(y => y.isCurrent === 1);
+      setCurrentAcademicYear(active || null);
+    }
+  } catch (error) {
+    console.error('Error fetching academic year:', error);
+  }
+};
   useEffect(() => {
     fetchClasses();
   }, []);
@@ -101,7 +120,16 @@ const [selectedClassData, setSelectedClassData] = useState(null);
       console.error('Error fetching classes:', error);
     }
   };
-
+useEffect(() => {
+  if (currentAcademicYear) {
+    const currentTerm = currentAcademicYear.terms?.find(t => t.isCurrent === 1);
+    setFormData(prev => ({
+      ...prev,
+      academicYear: currentAcademicYear.yearLabel,
+      entryTermId: prev.entryTermId || (currentTerm ? currentTerm.id : '')
+    }));
+  }
+}, [currentAcademicYear]);
 
 const handleChange = (e) => {
     const { name, value } = e.target;
@@ -184,7 +212,16 @@ if (step === 3) {
     if (availableSections.length > 0 && !formData.appliedSection) {
         newErrors.appliedSection = 'Section is required';
     }
+    if (!formData.entryTermId) newErrors.entryTermId = 'Entry term is required';
+    if (formData.admissionType === 'Transfer' && !formData.previousSchool.trim()) {
+        newErrors.previousSchool = 'Previous school is required for transfer students';
+    }
 }
+ if (step === 4) {
+        if (formData.admissionType === 'Transfer' && !formData.transferCertificate) {
+            newErrors.transferCertificate = 'Transfer certificate is required for transfer students';
+        }
+    }
 
     return newErrors;
   };
@@ -523,6 +560,44 @@ const renderStep3 = () => (
     <div className="form-step">
         <h3><GraduationCap /> Academic Information</h3>
         <div className="form-grid">
+
+            {/* ==================== ADMISSION TYPE ====================*/}
+            <div className="form-group">
+                <label>Admission Type <span className="required">*</span></label>
+                <select
+                    name="admissionType"
+                    value={formData.admissionType}
+                    onChange={handleChange}
+                >
+                    <option value="New">New Admission</option>
+                    <option value="Transfer">Transfer from Another School</option>
+                </select>
+            </div>
+
+            {/* ==================== ENTRY TERM ====================*/}
+            <div className="form-group">
+                <label>Entry Term <span className="required">*</span></label>
+                <select
+                    name="entryTermId"
+                    value={formData.entryTermId}
+                    onChange={handleChange}
+                    className={errors.entryTermId ? 'error' : ''}
+                >
+                    <option value="">Select Term</option>
+                    {currentAcademicYear?.terms?.map(term => (
+                        <option key={term.id} value={term.id}>
+                            {term.termName}{term.isCurrent ? ' (Current)' : ''}
+                        </option>
+                    ))}
+                </select>
+                {errors.entryTermId && <p className="error-message">{errors.entryTermId}</p>}
+                {formData.admissionType === 'Transfer' && (
+                    <p className="help-text">
+                        Transfers can join in any term — pick the term the student is actually starting.
+                    </p>
+                )}
+            </div>
+
             {/* ==================== CLASS SELECTION ====================*/}
             <div className="form-group">
                 <label>Applied Class <span className="required">*</span></label>
@@ -535,8 +610,8 @@ const renderStep3 = () => (
                     <option value="">Select Class</option>
                     {classes.map(cls => (
                         <option key={cls.id} value={cls.id}>
-                            {cls.className} 
-                            {cls.section ? ` (Section ${cls.section})` : ''} 
+                            {cls.className}
+                            {cls.section ? ` (Section ${cls.section})` : ''}
                             - {cls.currentStudents}/{cls.capacity} students
                         </option>
                     ))}
@@ -544,7 +619,6 @@ const renderStep3 = () => (
                 {errors.appliedClass && <p className="error-message">{errors.appliedClass}</p>}
             </div>
 
-            {/* ==================== SECTION SELECTION (NEW) ====================*/}
             {selectedClassData && availableSections.length > 0 && (
                 <div className="form-group">
                     <label>Section <span className="required">*</span></label>
@@ -556,16 +630,13 @@ const renderStep3 = () => (
                     >
                         <option value="">Select Section</option>
                         {availableSections.map(section => (
-                            <option key={section} value={section}>
-                                Section {section}
-                            </option>
+                            <option key={section} value={section}>Section {section}</option>
                         ))}
                     </select>
                     {errors.appliedSection && <p className="error-message">{errors.appliedSection}</p>}
                 </div>
             )}
 
-            {/* ==================== CLASS INFO DISPLAY (NEW) ====================*/}
             {selectedClassData && (
                 <div className="class-info-card full-width">
                     <div className="info-row">
@@ -584,34 +655,40 @@ const renderStep3 = () => (
                         <span className="info-label">Capacity:</span>
                         <span className="info-value">
                             {selectedClassData.currentStudents}/{selectedClassData.capacity} students
-                            {selectedClassData.currentStudents >= selectedClassData.capacity && 
-                                <span className="status-full"> (FULL)</span>
-                            }
+                            {selectedClassData.currentStudents >= selectedClassData.capacity &&
+                                <span className="status-full"> (FULL)</span>}
                         </span>
                     </div>
                 </div>
             )}
 
+            {/* ==================== ACADEMIC YEAR (READ-ONLY, LIVE) ====================*/}
             <div className="form-group">
                 <label>Academic Year</label>
                 <input
                     type="text"
-                    name="academicYear"
-                    value={formData.academicYear}
-                    onChange={handleChange}
-                    placeholder="2024/2025"
+                    value={formData.academicYear || (currentAcademicYear ? currentAcademicYear.yearLabel : 'Loading...')}
+                    disabled
+                    style={{ background: '#f1f5f9', cursor: 'not-allowed' }}
                 />
+                <p className="help-text-small">Set automatically from the active academic year.</p>
             </div>
 
+            {/* ==================== TRANSFER-ONLY FIELDS ====================*/}
             <div className="form-group">
-                <label>Previous School</label>
+                <label>
+                    Previous School
+                    {formData.admissionType === 'Transfer' && <span className="required"> *</span>}
+                </label>
                 <input
                     type="text"
                     name="previousSchool"
                     value={formData.previousSchool}
                     onChange={handleChange}
+                    className={errors.previousSchool ? 'error' : ''}
                     placeholder="Name of previous school"
                 />
+                {errors.previousSchool && <p className="error-message">{errors.previousSchool}</p>}
             </div>
 
             <div className="form-group">
@@ -628,7 +705,7 @@ const renderStep3 = () => (
     </div>
 );
 
-  const renderStep4 = () => (
+const renderStep4 = () => (
     <div className="form-step">
       <h3><Upload /> Upload Documents</h3>
       <div className="documents-upload-grid">
@@ -643,13 +720,21 @@ const renderStep3 = () => (
         </div>
 
         <div className="document-upload-item">
-          <label><Upload /> Transfer Certificate (if applicable)</label>
+          <label>
+            <Upload /> Transfer Certificate
+            {formData.admissionType === 'Transfer' && <span className="required"> *</span>}
+          </label>
           <input
             type="file"
             accept="image/*,application/pdf"
             onChange={(e) => handleImageChange(e, 'transferCertificate')}
+            className={errors.transferCertificate ? 'error' : ''}
           />
           {formData.transferCertificate && <span className="file-uploaded">✓ Uploaded</span>}
+          {errors.transferCertificate && <p className="error-message">{errors.transferCertificate}</p>}
+          {formData.admissionType === 'Transfer' && !formData.transferCertificate && (
+            <p className="help-text">Required since this application is marked as a transfer.</p>
+          )}
         </div>
 
         <div className="document-upload-item">
@@ -664,7 +749,7 @@ const renderStep3 = () => (
       </div>
       <p className="help-text">All documents should be clear scans or photos (PDF or images, max 5MB each)</p>
     </div>
-  );
+);
 
  return (
   <div className="admission-form-container">
