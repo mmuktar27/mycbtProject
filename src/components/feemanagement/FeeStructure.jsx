@@ -11,7 +11,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import './FeeStructure.css';
-
+import { useAcademicYears } from '../../context/AcademicYearContext';
 // Custom Dialog Component
 const Dialog = ({ isOpen, onClose, onConfirm, title, message, type = 'danger' }) => {
   if (!isOpen) return null;
@@ -69,6 +69,7 @@ const FeeStructure = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('category');
   const [editingItem, setEditingItem] = useState(null);
+  const { academicYears, currentYear, loading: yearsLoading, getTermsForYear } = useAcademicYears();
 
   // Dialog state
   const [dialog, setDialog] = useState({
@@ -90,28 +91,7 @@ const FeeStructure = () => {
     categoryName: '',
     description: ''
   });
-const [schoolSettings, setSchoolSettings] = useState(null);
-const [academicYears, setAcademicYears] = useState([]);
-  const [structureForm, setStructureForm] = useState({
-    academicYear: '2024/2025',
-    className: '',
-    classId: '',
-    term: '',
-    categoryId: '',
-    amount: '',
-    dueDate: '',
-    isCompulsory: 1,
-    installmentAllowed: 0,
-    maxInstallments: 1,
-    latePaymentFine: 0,
-    gracePeriodDays: 0
-  });
 
-  const [filters, setFilters] = useState({
-    academicYear: '2024/2025',
-    className: '',
-    term: ''
-  });
 
   // Toast helper
   const showToast = (message, type = 'success') => {
@@ -136,35 +116,41 @@ const [academicYears, setAcademicYears] = useState([]);
   const closeDialog = () => {
     setDialog({ ...dialog, isOpen: false });
   };
- const generateAcademicYears = (currentAcademicYear) => {
-    if (!currentAcademicYear) {
-      // Fallback to current date if no school settings
-      const currentYear = new Date().getFullYear();
-      currentAcademicYear = `${currentYear}/${currentYear + 1}`;
-    }
+const [structureForm, setStructureForm] = useState({
+  academicYear: '',   // was hardcoded '2024/2025'
+  className: '',
+  classId: '',
+  term: '',
+  categoryId: '',
+  amount: '',
+  dueDate: '',
+  isCompulsory: 1,
+  installmentAllowed: 0,
+  maxInstallments: 1,
+  latePaymentFine: 0,
+  gracePeriodDays: 0
+});
 
-    // Extract the starting year from format "2024/2025"
-    const startYear = parseInt(currentAcademicYear.split('/')[0]);
-    
-    const years = [];
-    
-    // Generate 10 years before current year
-    for (let i = 10; i > 0; i--) {
-      const year = startYear - i;
-      years.push(`${year}/${year + 1}`);
-    }
-    
-    // Add current year
-    years.push(currentAcademicYear);
-    
-    // Add 5 years after current year
-    for (let i = 1; i <= 5; i++) {
-      const year = startYear + i;
-      years.push(`${year}/${year + 1}`);
-    }
-    
-    return years;
-  };
+const [filters, setFilters] = useState({
+  academicYear: '',   // was hardcoded '2024/2025'
+  className: '',
+  term: ''
+});
+
+// Default both to the current year once context data loads
+useEffect(() => {
+  if (currentYear && !filters.academicYear) {
+    setFilters(prev => ({ ...prev, academicYear: currentYear.yearLabel }));
+  }
+  if (currentYear && !structureForm.academicYear) {
+    setStructureForm(prev => ({ ...prev, academicYear: currentYear.yearLabel }));
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [currentYear]);
+
+
+const filterTerms = getTermsForYear(filters.academicYear);
+const structureTerms = getTermsForYear(structureForm.academicYear);
   // Fetch categories
   const fetchCategories = async () => {
     try {
@@ -214,48 +200,19 @@ const [academicYears, setAcademicYears] = useState([]);
       showToast('Failed to fetch classes', 'error');
     }
   };
- const fetchSchoolSettings = async () => {
-    try {
-      const response = await fetch('/api/school-settings');
-      const data = await response.json();
-      if (data.success) {
-        setSchoolSettings(data.data);
-        const years = generateAcademicYears(data.data.academicYear);
-        setAcademicYears(years);
-        
-        // Set the current academic year as default
-        setFilters(prev => ({
-          ...prev,
-          academicYear: data.data.academicYear
-        }));
-        setStructureForm(prev => ({
-          ...prev,
-          academicYear: data.data.academicYear
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching school settings:', error);
-      // Fallback: generate years based on current date
-      const currentYear = new Date().getFullYear();
-      const fallbackYear = `${currentYear}/${currentYear + 1}`;
-      const years = generateAcademicYears(fallbackYear);
-      setAcademicYears(years);
-      setFilters(prev => ({ ...prev, academicYear: fallbackYear }));
-      setStructureForm(prev => ({ ...prev, academicYear: fallbackYear }));
-    }
-  };
+
   useEffect(() => {
-    fetchSchoolSettings();
     fetchCategories();
 
     fetchClasses();
   }, []);
 
-  useEffect(() => {
-    if (activeTab === 'structures') {
-      fetchStructures();
-    }
-  }, [activeTab, filters]);
+useEffect(() => {
+  if (activeTab === 'structures') {
+    fetchStructures();
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [activeTab, filters]);
 
   // Handle create/edit category
   const handleCategorySubmit = async (e) => {
@@ -440,7 +397,7 @@ const [academicYears, setAcademicYears] = useState([]);
 
   const resetStructureForm = () => {
     setStructureForm({
-      academicYear: schoolSettings?.academicYear || '',
+      academicYear: currentYear?.yearLabel || '',  
       className: '',
       classId: '',
       term: '',
@@ -563,26 +520,25 @@ const [academicYears, setAcademicYears] = useState([]);
           </div>
 
           {/* Filters */}
-          <div className="filters-container">
-            <div className="filter-group">
-              <label>Academic Year</label>
-                 <select
-                value={filters.academicYear}
-                onChange={(e) => setFilters({ ...filters, academicYear: e.target.value })}
-              >
-                {academicYears.length === 0 ? (
-                  <option value="">Loading...</option>
-                ) : (
-                  academicYears.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                      {schoolSettings && year === schoolSettings.academicYear && ' (Current)'}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-            <div className="filter-group">
+         <div className="fee-filters-container">
+  <div className="fee-filter-group">
+               <label>Academic Year</label>
+  <select
+    value={filters.academicYear}
+    onChange={(e) => setFilters({ ...filters, academicYear: e.target.value, term: '' })}
+  >
+    {yearsLoading || academicYears.length === 0 ? (
+      <option value="">Loading...</option>
+    ) : (
+      academicYears.map((y) => (
+        <option key={y.id} value={y.yearLabel}>
+          {y.yearLabel}{y.isCurrent ? ' (Current)' : ''}
+        </option>
+      ))
+    )}
+  </select>
+</div>
+            <div className="fee-filter-group">
               <label>Class</label>
               <select
                 value={filters.className}
@@ -596,18 +552,20 @@ const [academicYears, setAcademicYears] = useState([]);
                 ))}
               </select>
             </div>
-            <div className="filter-group">
-              <label>Term</label>
-              <select
-                value={filters.term}
-                onChange={(e) => setFilters({ ...filters, term: e.target.value })}
-              >
-                <option value="">All Terms</option>
-                <option value="1st Term">1st Term</option>
-                <option value="2nd Term">2nd Term</option>
-                <option value="3rd Term">3rd Term</option>
-              </select>
-            </div>
+           <div className="fee-filter-group">
+  <label>Term</label>
+  <select
+    value={filters.term}
+    onChange={(e) => setFilters({ ...filters, term: e.target.value })}
+  >
+    <option value="">All Terms</option>
+    {filterTerms.map((t) => (
+      <option key={t.id} value={t.termName}>
+        {t.termName}{t.isCurrent ? ' (Current)' : ''}
+      </option>
+    ))}
+  </select>
+</div>
           </div>
 
           {/* Structures Table */}
@@ -772,26 +730,25 @@ const [academicYears, setAcademicYears] = useState([]);
               <form onSubmit={handleStructureSubmit} className="modal-form">
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Academic Year *</label>
-                 <select
-  value={structureForm.academicYear}
-  onChange={(e) =>
-    setStructureForm({ ...structureForm, academicYear: e.target.value })
-  }
-  required
->
-  {academicYears.length === 0 ? (
-    <option value="">Loading...</option>
-  ) : (
-    academicYears.map((year) => (
-      <option key={year} value={year}>
-        {year}
-        {schoolSettings && year === schoolSettings.academicYear && ' (Current)'}
-      </option>
-    ))
-  )}
-</select>
-                  </div>
+  <label>Academic Year *</label>
+  <select
+    value={structureForm.academicYear}
+    onChange={(e) =>
+      setStructureForm({ ...structureForm, academicYear: e.target.value, term: '' })
+    }
+    required
+  >
+    {yearsLoading || academicYears.length === 0 ? (
+      <option value="">Loading...</option>
+    ) : (
+      academicYears.map((y) => (
+        <option key={y.id} value={y.yearLabel}>
+          {y.yearLabel}{y.isCurrent ? ' (Current)' : ''}
+        </option>
+      ))
+    )}
+  </select>
+</div>
 
                   <div className="form-group">
                     <label>Class *</label>
@@ -837,19 +794,19 @@ const [academicYears, setAcademicYears] = useState([]);
                   </div>
 
                   <div className="form-group">
-                    <label>Term</label>
-                    <select
-                      value={structureForm.term}
-                      onChange={(e) =>
-                        setStructureForm({ ...structureForm, term: e.target.value })
-                      }
-                    >
-                      <option value="">All Terms</option>
-                      <option value="1st Term">1st Term</option>
-                      <option value="2nd Term">2nd Term</option>
-                      <option value="3rd Term">3rd Term</option>
-                    </select>
-                  </div>
+  <label>Term</label>
+  <select
+    value={structureForm.term}
+    onChange={(e) => setStructureForm({ ...structureForm, term: e.target.value })}
+  >
+    <option value="">All Terms</option>
+    {structureTerms.map((t) => (
+      <option key={t.id} value={t.termName}>
+        {t.termName}{t.isCurrent ? ' (Current)' : ''}
+      </option>
+    ))}
+  </select>
+</div>
                 </div>
 
                 <div className="form-row">

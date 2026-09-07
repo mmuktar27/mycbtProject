@@ -10,7 +10,8 @@ import {
 import './AdmissionsList.css';
 import ExportModal from './ExportModal';
 import AdmissionActionModal from './AdmissionActionModal';
-
+import AppDialog from '../shared/AppDialog';
+import { useAppDialog } from '../../hooks/useAppDialog';
 
 
 
@@ -41,18 +42,6 @@ const AdmissionsList = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Dialog state
-  const [dialog, setDialog] = useState({
-    isOpen: false,
-    type: 'success', // success, error, info, warning, confirm
-    title: '',
-    message: '',
-    details: '',
-    actionLabel: 'Close',
-    onAction: null,
-    showCancel: false,
-    actionLoading: false
-  });
 
   useEffect(() => {
     fetchAdmissions();
@@ -97,33 +86,7 @@ const AdmissionsList = () => {
     }
   };
 
-  const showDialog = (type, title, message, details = '', actionLabel = 'Close', onAction = null, showCancel = false) => {
-    setDialog({
-      isOpen: true,
-      type,
-      title,
-      message,
-      details,
-      actionLabel,
-      onAction,
-      showCancel,
-      actionLoading: false
-    });
-  };
-
-  const closeDialog = () => {
-    setDialog({ ...dialog, isOpen: false });
-  };
-
-  const handleDialogAction = async () => {
-    if (dialog.onAction) {
-      setDialog({ ...dialog, actionLoading: true });
-      await dialog.onAction();
-      setDialog({ ...dialog, actionLoading: false });
-    } else {
-      closeDialog();
-    }
-  };
+const { dialog, showDialog, closeDialog, handleDialogAction } = useAppDialog();
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
@@ -270,23 +233,23 @@ const handleActionSubmit = async () => {
     setPagination({ ...pagination, page: newPage });
   };
 
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      pending: { icon: Clock, color: 'warning', text: 'Pending' },
-      under_review: { icon: AlertCircle, color: 'info', text: 'Under Review' },
-      approved: { icon: CheckCircle, color: 'success', text: 'Approved' },
-      rejected: { icon: XCircle, color: 'danger', text: 'Rejected' }
-    };
-
-    const config = statusConfig[status] || statusConfig.pending;
-    const Icon = config.icon;
-
-    return (
-      <span className={`badge badge-${config.color}`}>
-        <Icon size={14} /> {config.text}
-      </span>
-    );
+const getStatusBadge = (status) => {
+  const statusConfig = {
+    pending: { icon: Clock, color: 'warning', text: 'Pending' },
+    under_review: { icon: AlertCircle, color: 'info', text: 'Under Review' },
+    approved: { icon: CheckCircle, color: 'success', text: 'Approved' },
+    rejected: { icon: XCircle, color: 'danger', text: 'Rejected' }
   };
+
+  const config = statusConfig[status] || statusConfig.pending;
+  const Icon = config.icon;
+
+  return (
+    <span className={`status-pill status-pill--${config.color}`}>
+      <Icon size={14} /> {config.text}
+    </span>
+  );
+};
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -655,7 +618,14 @@ const getActionButtons = (admission) => {
                         {formatDate(admission.appliedAt)}
                       </div>
                     </td>
-                    <td>{getStatusBadge(admission.status)}</td>
+                    <td>
+  {getStatusBadge(admission.status)}
+  {admission.status === 'approved' && admission.studentId && (
+    <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '4px' }}>
+      ID: {admission.studentId}
+    </div>
+  )}
+</td>
                     <td>
                       <div className="action-buttons">
                         {getActionButtons(admission)}
@@ -695,59 +665,18 @@ const getActionButtons = (admission) => {
         </>
       )}
 
-
-      {/* Dialog Component */}
-      {dialog.isOpen && (
-        <div className="dialog-overlay" onClick={closeDialog}>
-          <div className="dialog-box" onClick={(e) => e.stopPropagation()}>
-            <div className="dialog-content">
-              <div className="dialog-icon-container">
-                {dialog.type === 'success' && <CheckCircle className="dialog-icon success" size={48} />}
-                {dialog.type === 'error' && <AlertTriangle className="dialog-icon error" size={48} />}
-                {dialog.type === 'warning' && <AlertCircle className="dialog-icon warning" size={48} />}
-                {dialog.type === 'info' && <Info className="dialog-icon info" size={48} />}
-                {dialog.type === 'confirm' && <AlertCircle className="dialog-icon confirm" size={48} />}
-              </div>
-
-              <h2 className="dialog-title">{dialog.title}</h2>
-              <p className="dialog-message">{dialog.message}</p>
-              
-              {dialog.details && (
-                <div className="dialog-details">
-                  {dialog.details.split('\n').map((line, index) => (
-                    <p key={index}>{line}</p>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="dialog-footer">
-              {dialog.showCancel && (
-                <button
-                  className="btn btn-secondary"
-                  onClick={closeDialog}
-                  disabled={dialog.actionLoading}
-                >
-                  Cancel
-                </button>
-              )}
-              <button
-                className={`btn btn-${
-                  dialog.type === 'success' ? 'success' :
-                  dialog.type === 'error' ? 'danger' :
-                  dialog.type === 'confirm' ? 'primary' :
-                  'primary'
-                }`}
-                onClick={handleDialogAction}
-                disabled={dialog.actionLoading}
-              >
-                {dialog.actionLoading && <Loader size={18} className="spinner-inline" />}
-                {dialog.actionLoading ? 'Processing...' : dialog.actionLabel}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+<AppDialog
+  isOpen={dialog.isOpen}
+  type={dialog.type}
+  title={dialog.title}
+  message={dialog.message}
+  details={dialog.details}
+  actionLabel={dialog.actionLabel}
+  onAction={dialog.onAction ? handleDialogAction : null}
+  onClose={closeDialog}
+  showCancel={dialog.showCancel}
+  actionLoading={dialog.actionLoading}
+/>
 <AdmissionActionModal
   isOpen={showActionModal}
   actionType={actionType}

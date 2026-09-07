@@ -77,7 +77,6 @@ const MainLayout = ({ children }) => {
         { title: 'Collect Fees', path: '/fees/collect' },
         { title: 'Fee Structure', path: '/fees/structure' },
         { title: 'Payment History', path: '/fees/history' },
-        { title: 'Receipts', path: '/fees/receipts' },
         { title: 'Defaulters', path: '/fees/defaulters' }
       ]
     },
@@ -151,6 +150,7 @@ const MainLayout = ({ children }) => {
         { title: 'Student Reports', path: '/reports/students' },
         { title: 'Financial Reports', path: '/reports/financial' },
         { title: 'Academic Reports', path: '/reports/academic' },
+        { title: 'Staff Reports', path: '/reports/staff' },
         { title: 'Attendance Reports', path: '/reports/attendance' }
       ]
     },

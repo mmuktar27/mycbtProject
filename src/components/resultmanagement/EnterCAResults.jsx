@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Upload, Download, Save, Plus, Trash2, AlertCircle, CheckCircle, RefreshCw, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import './Results.css';
-
+import AppDialog from '../shared/AppDialog';
+import { useAppDialog } from '../../hooks/useAppDialog';
 const API = '/api';
 
 export default function EnterCAResults() {
@@ -14,7 +15,7 @@ export default function EnterCAResults() {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [alert, setAlert] = useState(null);
-
+const { dialog, showDialog, closeDialog, handleDialogAction } = useAppDialog();
     // Session config
     const [config, setConfig] = useState({
         academicYear: '',
@@ -156,28 +157,39 @@ const [templateCols, setTemplateCols] = useState({ ca1: true, ca2: true, ca3: tr
         setSaving(false);
     }
 
-    async function submitForApproval() {
-        if (!activeSession) return;
-        if (!window.confirm('Submit results for approval? You will not be able to edit after submission.')) return;
-        setSaving(true);
-        try {
-            const res = await fetch(`${API}/results/sessions/${activeSession.sessionId}/submit`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ submittedBy: config.createdBy })
-            });
-            const data = await res.json();
-            if (data.success) {
-                showAlert('success', 'Results submitted for approval!');
-                await loadSession(activeSession.sessionId);
-            } else {
-                showAlert('error', data.message);
+    function submitForApproval() {
+    if (!activeSession) return;
+    showDialog(
+        'warning',
+        'Submit for Approval',
+        'Submit results for approval? You will not be able to edit after submission.',
+        '',
+        'Submit',
+        async () => {
+            setSaving(true);
+            try {
+                const res = await fetch(`${API}/results/sessions/${activeSession.sessionId}/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ submittedBy: config.createdBy })
+                });
+                const data = await res.json();
+                closeDialog();
+                if (data.success) {
+                    showAlert('success', 'Results submitted for approval!');
+                    await loadSession(activeSession.sessionId);
+                } else {
+                    showAlert('error', data.message);
+                }
+            } catch (e) {
+                closeDialog();
+                showAlert('error', e.message);
             }
-        } catch (e) {
-            showAlert('error', e.message);
-        }
-        setSaving(false);
-    }
+            setSaving(false);
+        },
+        true
+    );
+}
 
 function downloadTemplate(cols = null) {
     if (!activeSession || results.length === 0) return showAlert('error', 'No results to download');
@@ -594,6 +606,19 @@ function downloadTemplate(cols = null) {
         </div>
     </div>
 )}
+
+<AppDialog
+  isOpen={dialog.isOpen}
+  type={dialog.type}
+  title={dialog.title}
+  message={dialog.message}
+  details={dialog.details}
+  actionLabel={dialog.actionLabel}
+  onAction={dialog.onAction ? handleDialogAction : null}
+  onClose={closeDialog}
+  showCancel={dialog.showCancel}
+  actionLoading={dialog.actionLoading || saving}
+/>
         </div>
     );
 }

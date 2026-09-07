@@ -16,7 +16,8 @@ import {
   CheckCircle
 } from "lucide-react";
 
-
+import AppDialog from '../shared/AppDialog';
+import { useAppDialog } from '../../hooks/useAppDialog';
 import './Staffprofile.css';
 
 const StaffProfile = () => {
@@ -24,7 +25,7 @@ const StaffProfile = () => {
   const navigate = useNavigate();
   const [staff, setStaff] = useState(null);
   const [loading, setLoading] = useState(true);
-
+const { dialog, showDialog, closeDialog, handleDialogAction } = useAppDialog();
   useEffect(() => {
     fetchStaffProfile();
   }, [staffId]);
@@ -38,7 +39,7 @@ const StaffProfile = () => {
       }
     } catch (error) {
       console.error('Error fetching staff profile:', error);
-      alert('Failed to load staff profile');
+ // showDialog('error', 'Failed to Load Profile', 'Could not load the staff profile.');
     } finally {
       setLoading(false);
     }
@@ -182,6 +183,12 @@ const StaffProfile = () => {
                   <span className={`status-pill ${staff.status}`}>{staff.status}</span>
                 </span>
               </div>
+              {staff.psn && (
+      <div className="info-item">
+        <span className="info-label">PSN:</span>
+        <span className="info-value">{staff.psn}</span>
+      </div>
+    )}
             </div>
           </div>
         </div>

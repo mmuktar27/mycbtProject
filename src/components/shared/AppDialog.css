@@ -1,0 +1,149 @@
+/* AppDialog.css */
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.dialog-box {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: dialog-pop-in 0.15s ease-out;
+}
+
+@keyframes dialog-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.dialog-content {
+  padding: 32px 24px 16px;
+  text-align: center;
+}
+
+.dialog-icon-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.dialog-icon.success {
+  color: #16a34a;
+}
+
+.dialog-icon.error {
+  color: #dc2626;
+}
+
+.dialog-icon.warning {
+  color: #d97706;
+}
+
+.dialog-icon.info {
+  color: #2563eb;
+}
+
+.dialog-icon.confirm {
+  color: #2563eb;
+}
+
+.dialog-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px;
+}
+
+.dialog-message {
+  font-size: 0.95rem;
+  color: #4b5563;
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+
+.dialog-details {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+  text-align: left;
+}
+
+.dialog-details p {
+  font-size: 0.85rem;
+  color: #374151;
+  margin: 4px 0;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px 24px;
+}
+
+/* Namespaced buttons — avoids colliding with Bootstrap's .btn / .btn-primary etc. */
+.app-dialog-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.15s ease;
+}
+
+.app-dialog-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.app-dialog-btn-primary {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.app-dialog-btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.app-dialog-btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.app-dialog-btn-success {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.spinner-inline {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

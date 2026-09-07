@@ -6,7 +6,8 @@ import {
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import './ExportModal.css';
-
+import AppDialog from '../shared/AppDialog';
+import { useAppDialog } from '../../hooks/useAppDialog';
 const ExportModal = ({ isOpen, onClose, admissions, filters = {} }) => {
   const [exportFormat, setExportFormat] = useState('excel');
   const [selectedAdmissions, setSelectedAdmissions] = useState([]);
@@ -27,6 +28,14 @@ const ExportModal = ({ isOpen, onClose, admissions, filters = {} }) => {
     selectedStatus: '',
     selectedClass: ''
   });
+const [allMatchingAdmissions, setAllMatchingAdmissions] = useState([]);
+const [loadingFullData, setLoadingFullData] = useState(false);
+const { dialog, showDialog, closeDialog, handleDialogAction } = useAppDialog();
+useEffect(() => {
+  if (isOpen) {
+    fetchFullAdmissionSet();
+  }
+}, [isOpen]);
 
   // Fetch school info and admission officer on component mount
   useEffect(() => {
@@ -36,6 +45,23 @@ const ExportModal = ({ isOpen, onClose, admissions, filters = {} }) => {
     }
   }, [isOpen]);
 
+const fetchFullAdmissionSet = async () => {
+  try {
+    setLoadingFullData(true);
+    const response = await fetch('/api/admissions/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ format: 'json' }) // fetch everything; local filters handle status/class from here
+    });
+    const result = await response.json();
+    setAllMatchingAdmissions(result.success ? result.data : []);
+  } catch (error) {
+    console.error('Error fetching full admission set for export:', error);
+    setAllMatchingAdmissions([]);
+  } finally {
+    setLoadingFullData(false);
+  }
+};
 const fetchSchoolInfo = async () => {
   try {
     const response = await fetch('/api/school-settings');
@@ -125,16 +151,16 @@ const fetchAdmissionOfficer = async () => {
     return String(index + 1).padStart(3, '0');
   };
 
-  if (!isOpen) return null;
 
-  const handleSelectAll = () => {
-    if (selectAll) {
-      setSelectedAdmissions([]);
-    } else {
-      setSelectedAdmissions(admissions.map(a => a.id));
-    }
-    setSelectAll(!selectAll);
-  };
+
+const handleSelectAll = () => {
+  if (selectAll) {
+    setSelectedAdmissions([]);
+  } else {
+    setSelectedAdmissions(filteredAdmissions.map(a => a.id));
+  }
+  setSelectAll(!selectAll);
+};
 
   const handleSelectAdmission = (id) => {
     if (selectedAdmissions.includes(id)) {
@@ -145,23 +171,26 @@ const fetchAdmissionOfficer = async () => {
     }
   };
 
-  const getAdmissionsToExport = () => {
-    let toExport = admissions;
+//
+const getFilteredAdmissions = (source) => {
+  let filtered = source;
+  if (exportOptions.selectedStatus) {
+    filtered = filtered.filter(a => a.status === exportOptions.selectedStatus);
+  }
+  if (exportOptions.selectedClass) {
+    filtered = filtered.filter(a => a.appliedClass === exportOptions.selectedClass);
+  }
+  return filtered;
+};
 
-    if (exportOptions.selectedStatus) {
-      toExport = toExport.filter(a => a.status === exportOptions.selectedStatus);
-    }
-
-    if (exportOptions.selectedClass) {
-      toExport = toExport.filter(a => a.appliedClass === exportOptions.selectedClass);
-    }
-
-    if (selectedAdmissions.length > 0) {
-      toExport = toExport.filter(a => selectedAdmissions.includes(a.id));
-    }
-
-    return toExport;
-  };
+// What actually gets exported — respects the checkbox selection on top of the filters
+const getAdmissionsToExport = (source) => {
+  const filtered = getFilteredAdmissions(source);
+  if (selectedAdmissions.length > 0) {
+    return filtered.filter(a => selectedAdmissions.includes(a.id));
+  }
+  return filtered;
+};
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -195,10 +224,10 @@ const getStudentNumber = (admission) => {
   const exportToExcel = async () => {
     try {
       setIsExporting(true);
-      const data = getAdmissionsToExport();
+     const data = getAdmissionsToExport(allMatchingAdmissions);
 
       if (data.length === 0) {
-        alert('No data to export. Please select at least one admission.');
+  showDialog('warning', 'No Data to Export', 'Please select at least one admission.');
         return;
       }
 
@@ -242,11 +271,11 @@ const getStudentNumber = (admission) => {
       const fileName = `Admissions_List_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(workbook, fileName);
 
-      alert(`✅ Exported ${data.length} admission(s) to Excel successfully!`);
-      onClose();
+showDialog('success', 'Export Complete', `Exported ${data.length} admission(s) to Excel successfully.`); 
     } catch (error) {
       console.error('Error exporting to Excel:', error);
-      alert('Failed to export to Excel: ' + error.message);
+      showDialog('error', 'Export Failed', 'Failed to export to Excel.', error.message);
+
     } finally {
       setIsExporting(false);
     }
@@ -546,10 +575,10 @@ const generateAdmissionLetterPDF = (admission, doc, isFirstPage, allAdmissions) 
 const exportToPDF = async () => {
     try {
         setIsExporting(true);
-        const data = getAdmissionsToExport();
+        const data = getAdmissionsToExport(allMatchingAdmissions);
 
         if (data.length === 0) {
-            alert('No data to export. Please select at least one admission.');
+  showDialog('warning', 'No Data to Export', 'Please select at least one admission.');
             return;
         }
 
@@ -636,11 +665,11 @@ const exportToPDF = async () => {
         doc.save(fileName);
 
         console.log(`✅ PDF saved:`, fileName);
-        alert(`✅ Exported ${enrichedData.length} admission letter(s) to PDF successfully!`);
-        onClose();
+showDialog('success', 'Export Complete', `Exported ${enrichedData.length} admission letter(s) to PDF successfully.`);       
     } catch (error) {
         console.error('Error exporting to PDF:', error);
-        alert('Failed to export to PDF: ' + error.message);
+           showDialog('error', 'Export Failed', 'Failed to export to PDF.', error.message);
+
     } finally {
         setIsExporting(false);
     }
@@ -650,10 +679,10 @@ const exportToPDF = async () => {
   const exportToCSV = async () => {
     try {
       setIsExporting(true);
-      const data = getAdmissionsToExport();
+       const data = getAdmissionsToExport(allMatchingAdmissions);
 
       if (data.length === 0) {
-        alert('No data to export. Please select at least one admission.');
+  showDialog('warning', 'No Data to Export', 'Please select at least one admission.');
         return;
       }
 
@@ -690,12 +719,12 @@ const exportToPDF = async () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+showDialog('success', 'Export Complete', `Exported ${data.length} admission(s) to CSV successfully.`);
 
-      alert(`✅ Exported ${data.length} admission(s) to CSV successfully!`);
-      onClose();
     } catch (error) {
       console.error('Error exporting to CSV:', error);
-      alert('Failed to export to CSV: ' + error.message);
+        showDialog('error', 'Export Failed', 'Failed to export to Excel.', error.message);
+
     } finally {
       setIsExporting(false);
     }
@@ -711,11 +740,15 @@ const exportToPDF = async () => {
     }
   };
 
-  const admissionsToExport = getAdmissionsToExport();
-  const uniqueStatuses = [...new Set(admissions.map(a => a.status))];
-  const uniqueClasses = [...new Set(admissions.map(a => a.appliedClass))];
+const uniqueStatuses = [...new Set(allMatchingAdmissions.map(a => a.status))];
+const uniqueClasses = [...new Set(allMatchingAdmissions.map(a => a.appliedClass))];
+
+const filteredAdmissions = getFilteredAdmissions(allMatchingAdmissions);
+const admissionsToExport = getAdmissionsToExport(allMatchingAdmissions);
 
   return (
+    <>
+      {isOpen && (
     <div className="export-modal-overlay" onClick={onClose}>
       <div className="export-modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="export-modal-header">
@@ -781,12 +814,18 @@ const exportToPDF = async () => {
               </div>
             </div>
           )}
-
+{loadingFullData ? (
+  <div style={{ textAlign: 'center', padding: '2rem' }}>
+    <Loader className="export-spinner-inline" size={24} />
+    <p>Loading admissions...</p>
+  </div>
+) : (
+    <>
           {/* Filters */}
-          <div className="export-section">
+          <div className="export-filter-group">
             <h3><Filter size={18} /> Filter Data</h3>
-            <div className="export-filters">
-              <div className="filter-group">
+            <div className="export-filter-group">
+              <div className="export-filter-group">
                 <label>By Status</label>
                 <select
                   value={exportOptions.selectedStatus}
@@ -802,7 +841,7 @@ const exportToPDF = async () => {
                 </select>
               </div>
 
-              <div className="filter-group">
+              <div className="export-filter-group">
                 <label>By Class</label>
                 <select
                   value={exportOptions.selectedClass}
@@ -823,7 +862,8 @@ const exportToPDF = async () => {
           {/* Select Specific Admissions */}
           <div className="export-section">
             <div className="admissions-select-header">
-              <h3>Select Admissions ({admissionsToExport.length} available)</h3>
+             <h3>Select Admissions ({filteredAdmissions.length} available)</h3>
+
               <label className="select-all-checkbox">
                 <input
                   type="checkbox"
@@ -836,15 +876,15 @@ const exportToPDF = async () => {
             </div>
 
             <div className="admissions-list">
-              {admissionsToExport.length === 0 ? (
+              {filteredAdmissions.length === 0 ? (
                 <p className="no-admissions">No admissions match the selected filters.</p>
               ) : (
-                admissionsToExport.map((admission) => (
+                filteredAdmissions.map((admission) => (
                   <div key={admission.id} className="admission-item">
                     <input
                       type="checkbox"
                       checked={selectedAdmissions.includes(admission.id)}
-                      onChange={() => handleSelectAdmission(admission.id)}
+        onChange={() => handleSelectAdmission(admission.id)}
                       disabled={isExporting}
                     />
                     <div className="admission-details">
@@ -852,10 +892,10 @@ const exportToPDF = async () => {
                         {admission.firstName} {admission.lastName}
                       </div>
                       <div className="admission-meta">
-                        <span className="app-id">{admission.applicationId}</span>
-                        <span className="class-badge">{admission.appliedClass}</span>
-                        <span className="year-badge">{admission.academicYear}</span>
-                        <span className={`status-badge status-${admission.status}`}>
+                        <span className="export-app-id">{admission.applicationId}</span>
+                        <span className="export-class-badge">{admission.appliedClass}</span>
+                        <span className="export-year-badge">{admission.academicYear}</span>
+                        <span className={`export-status-badge export-status-${admission.status}`}>
                           {getStatusLabel(admission.status)}
                         </span>
                       </div>
@@ -865,7 +905,8 @@ const exportToPDF = async () => {
               )}
             </div>
           </div>
-
+           </>
+)}
           {/* Export Summary */}
           <div className="export-summary">
             <p>
@@ -884,20 +925,20 @@ const exportToPDF = async () => {
 
         <div className="export-modal-footer">
           <button
-            className="btn btn-secondary"
+            className="export-btn export-btn-secondary"
             onClick={onClose}
             disabled={isExporting}
           >
             Cancel
           </button>
           <button
-            className="btn btn-primary"
+            className="export-btn export-btn-primary"
             onClick={handleExport}
             disabled={isExporting || (selectedAdmissions.length === 0 && admissionsToExport.length === 0)}
           >
             {isExporting ? (
               <>
-                <Loader size={18} className="spinner-inline" />
+                <Loader size={18} className="export-spinner-inline" />
                 Exporting...
               </>
             ) : (
@@ -909,7 +950,29 @@ const exportToPDF = async () => {
           </button>
         </div>
       </div>
+
+
+
     </div>
+       )}
+          <AppDialog
+        isOpen={dialog.isOpen}
+        type={dialog.type}
+        title={dialog.title}
+        message={dialog.message}
+        details={dialog.details}
+        actionLabel={dialog.actionLabel}
+        onAction={dialog.onAction ? handleDialogAction : null}
+        onClose={() => {
+          closeDialog();
+          if (dialog.type === 'success') {
+            onClose(); // now close the export modal too, only after user dismisses the success message
+          }
+        }}
+        showCancel={dialog.showCancel}
+        actionLoading={dialog.actionLoading}
+      />
+       </>
   );
 };
 

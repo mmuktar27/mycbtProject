@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import './AdmissionDetail.css';
 import AdmissionActionModal from './AdmissionActionModal';
+import AppDialog from '../shared/AppDialog';
+import { useAppDialog } from '../../hooks/useAppDialog';
 const AdmissionDetail = () => {
   const { applicationId } = useParams();
   const navigate = useNavigate();
@@ -20,6 +22,7 @@ const AdmissionDetail = () => {
     type: '', // approve, reject, review
     loading: false
   });
+  const { dialog, showDialog, closeDialog, handleDialogAction } = useAppDialog();
   const [formData, setFormData] = useState({
     reviewedBy: 'Admin',
     rejectionReason: '',
@@ -87,6 +90,19 @@ const handleActionClick = (type) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
+  
+ const handleConvertToStudent = () => {
+  setActionModal({ isOpen: true, type: 'convert-to-student', loading: false });
+  setFormData({
+    reviewedBy: 'Admin',
+    rejectionReason: '',
+    interviewScheduled: '',
+    entranceTestScore: '',
+    interviewNotes: '',
+    selectedClassId: '',
+    rollNumber: ''
+  });
+};
 
 const handleActionSubmit = async () => {
   try {
@@ -100,12 +116,13 @@ const handleActionSubmit = async () => {
         if (appliedClass) {
           finalClassId = appliedClass.id;
         } else {
-          alert('Could not determine class assignment. Please select a class manually.');
+          showDialog('warning', 'Missing Information', 'Could not determine class assignment. Please select a class manually.');
+
           return;
         }
       }
 
-      setActionModal({ ...actionModal, loading: true });
+      setActionModal(prev => ({ ...prev, loading: true }));
 
       const response = await axios.post(
         `/api/admissions/${applicationId}/approve-and-enroll`,
@@ -121,65 +138,86 @@ const handleActionSubmit = async () => {
       );
 
       if (response.data.success) {
-        alert(
-          `Student enrolled!\n\nStudent ID: ${response.data.data.studentId}\nAdmission Number: ${response.data.data.admissionNumber}\nStudent Number: ${response.data.data.studentNumber}`
-        );
+        
         setActionModal({ isOpen: false, type: '', loading: false });
         fetchAdmissionDetail();
+        showDialog(
+  'success',
+  'Student Enrolled',
+  'The application was approved and the student has been enrolled.',
+  `Student ID: ${response.data.data.studentId}\nAdmission Number: ${response.data.data.admissionNumber}\nStudent Number: ${response.data.data.studentNumber}`
+);
+      } else {
+        setActionModal(prev => ({ ...prev, loading: false }));
+      }
+      return; // safe now — no shared finally to fight with
+    }
+
+    // reject / review path
+    if (actionModal.type === 'reject' && !formData.rejectionReason.trim()) {
+showDialog('warning', 'Missing Information', 'Please provide a rejection reason.');
+      return;
+    }
+if (actionModal.type === 'convert-to-student') {
+      let finalClassId = formData.selectedClassId;
+
+      if (!finalClassId) {
+        const appliedClass = classes.find(c =>
+          c.className === admission.appliedClass && c.section === admission.appliedSection
+        );
+        if (appliedClass) {
+          finalClassId = appliedClass.id;
+        } else {
+showDialog('warning', 'Missing Information', 'Could not determine class assignment. Please select a class manually.');
+          return;
+        }
+      }
+
+      setActionModal(prev => ({ ...prev, loading: true }));
+
+      const response = await axios.post(
+        `/api/admissions/${applicationId}/convert-to-student`,
+        {
+          selectedClassId: finalClassId,
+          section: formData.selectedSection || admission.appliedSection,
+          rollNumber: formData.rollNumber
+        }
+      );
+
+      if (response.data.success) {
+       
+        setActionModal({ isOpen: false, type: '', loading: false });
+        fetchAdmissionDetail();
+        showDialog(
+  'success',
+  'Student Created',
+  'The student record was created successfully.',
+  `Student ID: ${response.data.data.studentId}\nAdmission Number: ${response.data.data.admissionNumber}\nStudent Number: ${response.data.data.studentNumber}`
+);
+      } else {
+        setActionModal(prev => ({ ...prev, loading: false }));
       }
       return;
     }
 
-    // reject / review — unchanged
-    if (actionModal.type === 'reject' && !formData.rejectionReason.trim()) {
-      alert('Please provide a rejection reason');
-      return;
-    }
-
-    setActionModal({ ...actionModal, loading: true });
+    setActionModal(prev => ({ ...prev, loading: true }));
 
     const status = actionModal.type === 'reject' ? 'rejected' : 'under_review';
     const response = await axios.put(`/api/admissions/${applicationId}/status`, { ...formData, status });
 
     if (response.data.success) {
-      alert(response.data.message);
+
       setActionModal({ isOpen: false, type: '', loading: false });
       fetchAdmissionDetail();
+      showDialog('success', 'Success', response.data.message);
     }
   } catch (err) {
     console.error('Error updating status:', err);
-    alert(err.response?.data?.message || 'Failed to update admission');
-  } finally {
-    setActionModal({ ...actionModal, loading: false });
+    setActionModal(prev => ({ ...prev, loading: false }));
+    showDialog('error', 'Update Failed', err.response?.data?.message || 'Failed to update admission.');
   }
 };
 
-  const handleConvertToStudent = async () => {
-    if (!window.confirm('Are you sure you want to convert this approved admission to a student? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      setActionModal({ ...actionModal, loading: true });
-
-      const response = await axios.post(
-        `/api/admissions/${applicationId}/convert-to-student`,
-        {}
-      );
-
-      if (response.data.success) {
-        alert(
-          `Student created successfully!\n\nStudent ID: ${response.data.data.studentId}\nAdmission Number: ${response.data.data.admissionNumber}`
-        );
-        setActionModal({ isOpen: false, type: '', loading: false });
-        fetchAdmissionDetail();
-      }
-    } catch (err) {
-      console.error('Error converting to student:', err);
-      alert(err.response?.data?.message || 'Failed to convert to student');
-      setActionModal({ ...actionModal, loading: false });
-    }
-  };
 
   const downloadDocument = (documentData, fileName) => {
     if (!documentData) return;
@@ -193,7 +231,7 @@ const handleActionSubmit = async () => {
       document.body.removeChild(link);
     } catch (err) {
       console.error('Error downloading document:', err);
-      alert('Failed to download document');
+      showDialog('error', 'Download Failed', 'Failed to download document.');
     }
   };
 
@@ -248,16 +286,23 @@ const handleActionSubmit = async () => {
           </>
         )}
 
-        {admission.status === 'approved' && (
-          <button
-            onClick={handleConvertToStudent}
-            className="btn btn-primary"
-            title="Convert this student to permanent enrollment"
-          >
-            <UserPlus size={18} />
-            Convert to Student
-          </button>
-        )}
+        {admission.status === 'approved' && !admission.studentId && (
+  <button
+    onClick={handleConvertToStudent}
+    className="btn btn-primary"
+    title="Convert this student to permanent enrollment"
+  >
+    <UserPlus size={18} />
+    Convert to Student
+  </button>
+)}
+
+{admission.studentId && (
+  <div className="already-enrolled-note">
+    <CheckCircle size={18} />
+    Already enrolled — Student ID: {admission.studentId}
+  </div>
+)}
       </div>
     );
   };
@@ -287,7 +332,7 @@ const handleActionSubmit = async () => {
   if (error) {
     return (
       <div className="admission-detail-container">
-        <button onClick={() => navigate('/admissions/approved')} className="btn btn-secondary">
+        <button onClick={() => navigate('/admission/approved')} className="btn btn-secondary">
           <ArrowLeft size={18} /> Back to Admissions
         </button>
         <div className="error-state">
@@ -305,7 +350,7 @@ const handleActionSubmit = async () => {
   if (!admission) {
     return (
       <div className="admission-detail-container">
-        <button onClick={() => navigate('/admissions')} className="btn btn-secondary">
+        <button onClick={() => navigate('/admission/approved')} className="btn btn-secondary">
           <ArrowLeft size={18} /> Back to Admissions
         </button>
         <div className="error-state">
@@ -321,7 +366,7 @@ const handleActionSubmit = async () => {
     <div className="admission-detail-container">
       {/* Header */}
       <div className="detail-header">
-        <button onClick={() => navigate('/admissions')} className="btn btn-secondary">
+        <button onClick={() => navigate('/admission/approved')} className="btn btn-secondary">
           <ArrowLeft size={18} /> Back
         </button>
 
@@ -673,6 +718,20 @@ const handleActionSubmit = async () => {
   showClassAssignment={true}   // now matches AdmissionsList
   onClose={() => setActionModal({ ...actionModal, isOpen: false })}
   onSubmit={handleActionSubmit}
+/>
+
+
+<AppDialog
+  isOpen={dialog.isOpen}
+  type={dialog.type}
+  title={dialog.title}
+  message={dialog.message}
+  details={dialog.details}
+  actionLabel={dialog.actionLabel}
+  onAction={dialog.onAction ? handleDialogAction : null}
+  onClose={closeDialog}
+  showCancel={dialog.showCancel}
+  actionLoading={dialog.actionLoading}
 />
     </div>
   );

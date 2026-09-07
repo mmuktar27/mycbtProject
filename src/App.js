@@ -79,6 +79,10 @@ import PendingReview from './components/admissions/PendingReview';
 import RejectedApplications from './components/admissions/RejectedApplications';
 
 
+import StudentReports from './components/reports/StudentReports';
+import FinancialReports from './components/reports/FinancialReports';
+import AcademicReports from './components/reports/AcademicReports';
+import StaffReports from './components/reports/StaffReports';
 // Student Management
 //const StudentList = () => <div className="page-container"><h1>All Students</h1><p>Student list will be displayed here</p></div>;
 const AddStudent = () => <div className="page-container"><h1>Add New Student</h1><p>Add student form will be here</p></div>;
@@ -86,11 +90,6 @@ const AddStudent = () => <div className="page-container"><h1>Add New Student</h1
 //const BulkImport = () => <div className="page-container"><h1>Bulk Import Students</h1><p>Import multiple students</p></div>;
 
 
-// Results Management
-const EnterResultsCA = () => <div className="page-container"><h1>Enter CA Results</h1><p>Continuous assessment entry</p></div>;
-const EnterResultsExam = () => <div className="page-container"><h1>Enter Exam Results</h1><p>Exam results entry</p></div>;
-//const ViewResults = () => <div className="page-container"><h1>View Results</h1><p>View student results</p></div>;
-//const ApproveResults = () => <div className="page-container"><h1>Approve Results</h1><p>Approve submitted results</p></div>;
 
 // Report Cards
 //const GenerateReportCards = () => <div className="page-container"><h1>Generate Report Cards</h1><p>Generate student report cards</p></div>;
@@ -106,10 +105,7 @@ const MarkAttendance = () => <div className="page-container"><h1>Mark Attendance
 const ViewAttendance = () => <div className="page-container"><h1>View Attendance</h1><p>View attendance records</p></div>;
 const AttendanceReports = () => <div className="page-container"><h1>Attendance Reports</h1><p>Attendance reports and statistics</p></div>;
 
-// Reports
-const StudentReports = () => <div className="page-container"><h1>Student Reports</h1><p>Various student reports</p></div>;
-const FinancialReports = () => <div className="page-container"><h1>Financial Reports</h1><p>Financial reports and analysis</p></div>;
-const AcademicReports = () => <div className="page-container"><h1>Academic Reports</h1><p>Academic performance reports</p></div>;
+
 const AttendanceReportsPage = () => <div className="page-container"><h1>Attendance Reports</h1><p>Attendance statistics</p></div>;
 
 // Backup
@@ -196,6 +192,7 @@ function App() {
         <Route path="/staff" element={<MainLayout><Navigate to="/staff/all" replace /></MainLayout>} />
         <Route path="/staff/all" element={<MainLayout><StaffList /></MainLayout>} />
         <Route path="/staff/add" element={<MainLayout><AddStaff /></MainLayout>} />
+    <Route path="/staff/edit/:staffId" element={<MainLayout><AddStaff /></MainLayout>} />
 <Route path="/staff/profile/:staffId" element={<MainLayout><StaffProfile /></MainLayout>} />
         <Route path="/staff/departments" element={<MainLayout><Departments /></MainLayout>} />
 
@@ -210,6 +207,7 @@ function App() {
         <Route path="/reports/students" element={<MainLayout><StudentReports /></MainLayout>} />
         <Route path="/reports/financial" element={<MainLayout><FinancialReports /></MainLayout>} />
         <Route path="/reports/academic" element={<MainLayout><AcademicReports /></MainLayout>} />
+         <Route path="/reports/staff" element={<MainLayout><StaffReports /></MainLayout>} />
         <Route path="/reports/attendance" element={<MainLayout><AttendanceReportsPage /></MainLayout>} />
 
         {/* Backup Routes */}

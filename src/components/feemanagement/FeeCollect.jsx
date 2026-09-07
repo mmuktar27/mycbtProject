@@ -18,6 +18,10 @@ import {
 } from 'lucide-react';
 import './FeeCollect.css';
 import { useNavigate } from 'react-router-dom';
+import AppDialog from '../shared/AppDialog';
+import { useAppDialog } from '../../hooks/useAppDialog';
+import { useTermSelector } from '../../hooks/useTermSelector';
+
 const FeeCollect = () => {
     const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,10 +31,10 @@ const FeeCollect = () => {
   const [feeBreakdown, setFeeBreakdown] = useState(null);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [schoolSettings, setSchoolSettings] = useState(null);
-  const [academicYears, setAcademicYears] = useState([]);
-  const [academicYear, setAcademicYear] = useState('');
-  const [term, setTerm] = useState('1st Term');
-  
+
+  const { dialog, showDialog, closeDialog, handleDialogAction } = useAppDialog();
+  const { academicYears, academicYear, setAcademicYear, terms, termId, setTermId, termName: term } = useTermSelector();
+
   const [paymentData, setPaymentData] = useState({
     categoryId: '',
     amountPaid: '',
@@ -73,30 +77,7 @@ const FeeCollect = () => {
     return years;
   };
 
-  // Fetch school settings
-  const fetchSchoolSettings = async () => {
-    try {
-      const response = await fetch('/api/school-settings');
-      const data = await response.json();
-      if (data.success) {
-        setSchoolSettings(data.data);
-        const years = generateAcademicYears(data.data.academicYear);
-        setAcademicYears(years);
-        setAcademicYear(data.data.academicYear);
-      }
-    } catch (error) {
-      console.error('Error fetching school settings:', error);
-      const currentYear = new Date().getFullYear();
-      const fallbackYear = `${currentYear}/${currentYear + 1}`;
-      const years = generateAcademicYears(fallbackYear);
-      setAcademicYears(years);
-      setAcademicYear(fallbackYear);
-    }
-  };
 
-  useEffect(() => {
-    fetchSchoolSettings();
-  }, []);
 
   // Search students
   const handleSearch = async (value) => {
@@ -146,7 +127,7 @@ const FeeCollect = () => {
       }
     } catch (error) {
       console.error('Error fetching fee breakdown:', error);
-      alert('Failed to fetch fee details');
+      showDialog('error', 'Failed to Load Fees', 'Could not fetch fee details.');
     } finally {
       setLoading(false);
     }
@@ -164,17 +145,18 @@ const FeeCollect = () => {
     e.preventDefault();
     
     if (!selectedStudent || !paymentData.categoryId) {
-      alert('Please select a student and fee category');
+      showDialog('warning', 'Missing Information', 'Please select a student and fee category.');
       return;
     }
 
     if (!paymentData.amountPaid || parseFloat(paymentData.amountPaid) <= 0) {
-      alert('Please enter a valid amount');
+     showDialog('warning', 'Invalid Amount', 'Please enter a valid payment amount.');
       return;
     }
 
     if (!paymentData.receivedBy) {
-      alert('Please enter who received the payment');
+     showDialog('warning', 'Missing Information', 'Please enter who received the payment.');
+
       return;
     }
 
@@ -205,7 +187,7 @@ const FeeCollect = () => {
       const data = await response.json();
 
       if (data.success) {
-        alert(`Payment successful! Receipt Number: ${data.data.receiptNumber}`);
+        showDialog('success', 'Payment Recorded', `Receipt Number: ${data.data.receiptNumber}`);
         
         // Reset form
         setPaymentData({
@@ -227,13 +209,13 @@ const FeeCollect = () => {
         
         // Open receipt in new window
         // Instead of window.open(), use:
-   navigate(`/fees/receipts/${data.data.receiptNumber}`);;
+   navigate(`/fees/receipts/print/${encodeURIComponent(data.data.receiptNumber)}`);
       } else {
-        alert(`Payment failed: ${data.message}`);
+        showDialog('error', 'Payment Failed', `Payment failed: ${data.message}`);
       }
     } catch (error) {
       console.error('Error processing payment:', error);
-      alert('Failed to process payment');
+      showDialog('error', 'Payment Error', 'Failed to process payment.');
     } finally {
       setLoading(false);
     }
@@ -259,33 +241,50 @@ const FeeCollect = () => {
             <p>Process student fee payments</p>
           </div>
         </div>
-        <div className="header-right">
-          <select 
-            value={academicYear} 
-            onChange={(e) => setAcademicYear(e.target.value)}
-            className="year-select"
-          >
-            {academicYears.length === 0 ? (
-              <option value="">Loading...</option>
-            ) : (
-              academicYears.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                  {schoolSettings && year === schoolSettings.academicYear && ' (Current)'}
-                </option>
-              ))
-            )}
-          </select>
-          <select 
-            value={term} 
-            onChange={(e) => setTerm(e.target.value)}
-            className="term-select"
-          >
-            <option value="1st Term">1st Term</option>
-            <option value="2nd Term">2nd Term</option>
-            <option value="3rd Term">3rd Term</option>
-          </select>
-        </div>
+   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+  <select
+    value={academicYear}
+    onChange={(e) => setAcademicYear(e.target.value)}
+    style={{
+      padding: '0.625rem',
+      fontSize: '0.875rem',
+      border: '1px solid #d1d5db',
+      borderRadius: '6px',
+      backgroundColor: 'white',
+      boxSizing: 'border-box',
+      cursor: 'pointer'
+    }}
+  >
+    {academicYears.map(y => (
+      <option key={y.id} value={y.yearLabel}>
+        {y.yearLabel}{y.isCurrent ? ' (Current)' : ''}
+      </option>
+    ))}
+  </select>
+
+  <select
+    value={termId}
+    onChange={(e) => setTermId(e.target.value)}
+    disabled={!academicYear}
+    style={{
+      padding: '0.625rem',
+      fontSize: '0.875rem',
+      border: '1px solid #d1d5db',
+      borderRadius: '6px',
+      backgroundColor: !academicYear ? '#f3f4f6' : 'white',
+      boxSizing: 'border-box',
+      cursor: !academicYear ? 'not-allowed' : 'pointer',
+      opacity: !academicYear ? 0.6 : 1
+    }}
+  >
+    <option value="">Select term</option>
+    {terms.map(t => (
+      <option key={t.id} value={t.id}>
+        {t.termName}{t.isCurrent ? ' (Current)' : ''}
+      </option>
+    ))}
+  </select>
+</div>
       </div>
 
       {/* Student Search */}
@@ -531,7 +530,7 @@ const FeeCollect = () => {
                       <td>
                         <button
                           className="view-receipt-btn"
-                          onClick={() => window.open(`/fees/receipts/${payment.receiptNumber}`, '_blank')}
+                          onClick={() => window.open(`/fees/receipts/print/${encodeURIComponent(payment.receiptNumber)}`, '_blank')}
                         >
                           <Receipt size={16} /> Receipt
                         </button>
@@ -699,6 +698,19 @@ const FeeCollect = () => {
           <p>Enter a student's name, ID, or admission number to view their fee details</p>
         </div>
       )}
+
+      <AppDialog
+  isOpen={dialog.isOpen}
+  type={dialog.type}
+  title={dialog.title}
+  message={dialog.message}
+  details={dialog.details}
+  actionLabel={dialog.actionLabel}
+  onAction={dialog.onAction ? handleDialogAction : null}
+  onClose={closeDialog}
+  showCancel={dialog.showCancel}
+  actionLoading={dialog.actionLoading}
+/>
     </div>
   );
 };

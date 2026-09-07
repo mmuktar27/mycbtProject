@@ -351,48 +351,110 @@ const FeeDefaulters = () => {
       </div>
 
       {/* Filters */}
-      <div className="filters-section">
-        <div className="filters-row">
-          <div className="filter-group">
-            <label>Academic Year</label>
-            <select
-              value={filters.academicYear}
-              onChange={(e) => handleFilterChange('academicYear', e.target.value)}
-            >
-              <option value="2024/2025">2024/2025</option>
-              <option value="2023/2024">2023/2024</option>
-              <option value="2022/2023">2022/2023</option>
-            </select>
-          </div>
+  <div style={{ display: 'block', textAlign: 'left', marginBottom: '1rem' }}>
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+      gap: '1rem',
+      alignItems: 'end',
+      width: '100%'
+    }}
+  >
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+      <label style={{
+        fontSize: '0.75rem',
+        fontWeight: 600,
+        color: '#6b7280',
+        marginBottom: '0.5rem',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px'
+      }}>
+        Academic Year
+      </label>
+      <select
+        value={filters.academicYear}
+        onChange={(e) => handleFilterChange('academicYear', e.target.value)}
+        style={{
+          width: '100%',
+          padding: '0.625rem',
+          fontSize: '0.875rem',
+          border: '1px solid #d1d5db',
+          borderRadius: '6px',
+          backgroundColor: 'white',
+          boxSizing: 'border-box'
+        }}
+      >
+        <option value="2024/2025">2024/2025</option>
+        <option value="2023/2024">2023/2024</option>
+        <option value="2022/2023">2022/2023</option>
+      </select>
+    </div>
 
-          <div className="filter-group">
-            <label>Class</label>
-            <select
-              value={filters.className}
-              onChange={(e) => handleFilterChange('className', e.target.value)}
-            >
-              <option value="">All Classes</option>
-              {classes.map((cls) => (
-                <option key={cls.id} value={cls.className}>
-                  {cls.className}
-                </option>
-              ))}
-            </select>
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+      <label style={{
+        fontSize: '0.75rem',
+        fontWeight: 600,
+        color: '#6b7280',
+        marginBottom: '0.5rem',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px'
+      }}>
+        Class
+      </label>
+      <select
+        value={filters.className}
+        onChange={(e) => handleFilterChange('className', e.target.value)}
+        style={{
+          width: '100%',
+          padding: '0.625rem',
+          fontSize: '0.875rem',
+          border: '1px solid #d1d5db',
+          borderRadius: '6px',
+          backgroundColor: 'white',
+          boxSizing: 'border-box'
+        }}
+      >
+        <option value="">All Classes</option>
+        {classes.map((cls) => (
+          <option key={cls.id} value={cls.className}>
+            {cls.className}
+          </option>
+        ))}
+      </select>
+    </div>
 
-          <div className="filter-group">
-            <label>Status</label>
-            <select
-              value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-            >
-              <option value="">All Status</option>
-              <option value="overdue">Overdue</option>
-              <option value="pending">Pending</option>
-            </select>
-          </div>
-        </div>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+      <label style={{
+        fontSize: '0.75rem',
+        fontWeight: 600,
+        color: '#6b7280',
+        marginBottom: '0.5rem',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px'
+      }}>
+        Status
+      </label>
+      <select
+        value={filters.status}
+        onChange={(e) => handleFilterChange('status', e.target.value)}
+        style={{
+          width: '100%',
+          padding: '0.625rem',
+          fontSize: '0.875rem',
+          border: '1px solid #d1d5db',
+          borderRadius: '6px',
+          backgroundColor: 'white',
+          boxSizing: 'border-box'
+        }}
+      >
+        <option value="">All Status</option>
+        <option value="overdue">Overdue</option>
+        <option value="pending">Pending</option>
+      </select>
+    </div>
+  </div>
+</div>
 
       {/* Defaulters Table */}
       <div className="defaulters-table-container">

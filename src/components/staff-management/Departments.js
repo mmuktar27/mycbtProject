@@ -6,11 +6,12 @@ import {
   Trash,        // for Trash (Trash2 is also popular)
   Building,     // for Building
   User,         // for User
-  X,            // for X
+  X,   Loader2,        // for X
   Save          // for Save
 } from 'lucide-react';
 import './Departments.css';
-
+import AppDialog from '../shared/AppDialog';
+import { useAppDialog } from '../../hooks/useAppDialog';
 const Departments = () => {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,8 +24,9 @@ const Departments = () => {
     departmentHead: '',
     description: ''
   });
+  const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
-
+const { dialog, showDialog, closeDialog, handleDialogAction } = useAppDialog();
   useEffect(() => {
     fetchDepartments();
   }, []);
@@ -62,48 +64,58 @@ const Departments = () => {
     setShowModal(true);
   };
 
-  const handleDeleteClick = (dept) => {
-    setSelectedDept(dept);
-    setShowDeleteModal(true);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!formData.departmentName.trim()) {
-      setErrors({ departmentName: 'Department name is required' });
-      return;
-    }
-
-    try {
-      if (isEdit) {
-        await axios.put(`/api/departments/${selectedDept.id}`, formData);
-        alert('Department updated successfully');
-      } else {
-        await axios.post('/api/departments', formData);
-        alert('Department created successfully');
+const handleDeleteClick = (dept) => {
+  showDialog(
+    'danger',
+    'Confirm Deletion',
+    `Are you sure you want to delete "${dept.departmentName}"? This action cannot be undone.`,
+    '',
+    'Delete',
+    async () => {
+      try {
+        await axios.delete(`/api/departments/${dept.id}`);
+        closeDialog();
+        fetchDepartments();
+      } catch (error) {
+        closeDialog();
+        showDialog('error', 'Delete Failed', error.response?.data?.message || 'Failed to delete department.');
       }
-      setShowModal(false);
-      fetchDepartments();
-    } catch (error) {
-      if (error.response?.status === 409) {
-        setErrors({ departmentName: 'Department already exists' });
-      } else {
-        alert('Failed to save department');
-      }
-    }
-  };
+    },
+    true // showCancel
+  );
+};
 
-  const handleDelete = async () => {
-    try {
-      await axios.delete(`/api/departments/${selectedDept.id}`);
-      alert('Department deleted successfully');
-      setShowDeleteModal(false);
-      fetchDepartments();
-    } catch (error) {
-      alert(error.response?.data?.message || 'Failed to delete department');
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!formData.departmentName.trim()) {
+    setErrors({ departmentName: 'Department name is required' });
+    return;
+  }
+
+  setSubmitting(true);
+  try {
+    if (isEdit) {
+      await axios.put(`/api/departments/${selectedDept.id}`, formData);
+      showDialog('success', 'Department Updated', 'The department was updated successfully.');
+    } else {
+      await axios.post('/api/departments', formData);
+      showDialog('success', 'Department Created', 'The department was created successfully.');
     }
-  };
+    setShowModal(false);
+    fetchDepartments();
+  } catch (error) {
+    if (error.response?.status === 409) {
+      setErrors({ departmentName: 'Department already exists' });
+    } else {
+      showDialog('error', 'Save Failed', 'Failed to save department.');
+    }
+  } finally {
+    setSubmitting(false);
+  }
+};
+
+
 
   return (
     <div className="departments-container">
@@ -129,12 +141,40 @@ const Departments = () => {
               <div className="dept-header">
                 <h3>{dept.departmentName}</h3>
                 <div className="dept-actions">
-                  <button onClick={() => handleEditClick(dept)} className="btn-icon btn-edit">
-                    <Edit />
-                  </button>
-                  <button onClick={() => handleDeleteClick(dept)} className="btn-icon btn-delete">
-                    <Trash />
-                  </button>
+                  <button
+  onClick={() => handleEditClick(dept)}
+  style={{
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px',
+    border: '1px solid #e5e7eb',
+    borderRadius: '6px',
+    background: '#fff',
+    color: '#2563eb',
+    cursor: 'pointer'
+  }}
+>
+  <Edit size={16} />
+</button>
+<button
+  onClick={() => handleDeleteClick(dept)}
+  style={{
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px',
+    border: '1px solid #e5e7eb',
+    borderRadius: '6px',
+    background: '#fff',
+    color: '#dc2626',
+    cursor: 'pointer'
+  }}
+>
+  <Trash size={16} />
+</button>
                 </div>
               </div>
               <div className="dept-body">
@@ -153,76 +193,178 @@ const Departments = () => {
       )}
 
       {/* Add/Edit Modal */}
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{isEdit ? 'Edit Department' : 'Add New Department'}</h3>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label>Department Name <span className="required">*</span></label>
-                  <input
-                    type="text"
-                    value={formData.departmentName}
-                    onChange={(e) => setFormData({...formData, departmentName: e.target.value})}
-                    className={errors.departmentName ? 'error' : ''}
-                  />
-                  {errors.departmentName && <p className="error-message">{errors.departmentName}</p>}
-                </div>
-                <div className="form-group">
-                  <label>Department Head</label>
-                  <input
-                    type="text"
-                    value={formData.departmentHead}
-                    onChange={(e) => setFormData({...formData, departmentHead: e.target.value})}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Description</label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    rows="3"
-                  />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" onClick={() => setShowModal(false)} className="btn btn-secondary">
-                  <X /> Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  <Save /> {isEdit ? 'Update' : 'Create'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+    {showModal && (
+  <div
+    onClick={() => setShowModal(false)}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        background: '#fff',
+        borderRadius: '10px',
+        width: '90%',
+        maxWidth: '480px',
+        maxHeight: '90vh',
+        overflowY: 'auto',
+        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)'
+      }}
+    >
+      <div style={{ padding: '20px 24px', borderBottom: '1px solid #e5e7eb' }}>
+        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>
+          {isEdit ? 'Edit Department' : 'Add New Department'}
+        </h3>
+      </div>
 
-      {/* Delete Modal */}
-      {showDeleteModal && (
-        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Confirm Deletion</h3>
-            </div>
-            <div className="modal-body">
-              <p>Are you sure you want to delete <strong>{selectedDept?.departmentName}</strong>?</p>
-              <p className="warning-text">This action cannot be undone.</p>
-            </div>
-            <div className="modal-footer">
-              <button onClick={() => setShowDeleteModal(false)} className="btn btn-secondary">
-                Cancel
-              </button>
-              <button onClick={handleDelete} className="btn btn-danger">
-                Delete
-              </button>
-            </div>
+      <form onSubmit={handleSubmit}>
+        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '6px' }}>
+              Department Name <span style={{ color: '#dc2626' }}>*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.departmentName}
+              onChange={(e) => setFormData({ ...formData, departmentName: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '9px 12px',
+                fontSize: '14px',
+                border: `1px solid ${errors.departmentName ? '#dc2626' : '#e5e7eb'}`,
+                borderRadius: '6px',
+                outline: 'none'
+              }}
+            />
+            {errors.departmentName && (
+              <p style={{ color: '#dc2626', fontSize: '12px', margin: '4px 0 0' }}>
+                {errors.departmentName}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '6px' }}>
+              Department Head
+            </label>
+            <input
+              type="text"
+              value={formData.departmentHead}
+              onChange={(e) => setFormData({ ...formData, departmentHead: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '9px 12px',
+                fontSize: '14px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                outline: 'none'
+              }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '6px' }}>
+              Description
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows="3"
+              style={{
+                width: '100%',
+                padding: '9px 12px',
+                fontSize: '14px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                outline: 'none',
+                resize: 'vertical',
+                fontFamily: 'inherit'
+              }}
+            />
           </div>
         </div>
-      )}
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: '10px',
+            padding: '16px 24px',
+            borderTop: '1px solid #e5e7eb'
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setShowModal(false)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '9px 16px',
+              fontSize: '14px',
+              fontWeight: 500,
+              border: '1px solid #e5e7eb',
+              borderRadius: '6px',
+              background: '#fff',
+              color: '#374151',
+              cursor: 'pointer'
+            }}
+          >
+            <X size={16} /> Cancel
+          </button>
+          <button
+  type="submit"
+  disabled={submitting}
+  style={{
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '9px 16px',
+    fontSize: '14px',
+    fontWeight: 500,
+    border: 'none',
+    borderRadius: '6px',
+    background: submitting ? '#93c5fd' : '#2563eb',
+    color: '#fff',
+    cursor: submitting ? 'not-allowed' : 'pointer'
+  }}
+>
+  {submitting ? (
+    <>
+      <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+      {isEdit ? 'Updating...' : 'Creating...'}
+    </>
+  ) : (
+    <>
+      <Save size={16} /> {isEdit ? 'Update' : 'Create'}
+    </>
+  )}
+</button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
+<AppDialog
+  isOpen={dialog.isOpen}
+  type={dialog.type}
+  title={dialog.title}
+  message={dialog.message}
+  details={dialog.details}
+  actionLabel={dialog.actionLabel}
+  onAction={dialog.onAction ? handleDialogAction : null}
+  onClose={closeDialog}
+  showCancel={dialog.showCancel}
+  actionLoading={dialog.actionLoading}
+/>
     </div>
   );
 };

@@ -1,0 +1,137 @@
+.admission-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  padding: 1rem;
+}
+
+.admission-modal-content {
+  background: white;
+  border-radius: 12px;
+  max-width: 900px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.admission-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.admission-modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #1e293b;
+}
+
+.admission-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  color: #64748b;
+  border-radius: 6px;
+}
+.admission-modal-close:hover:not(:disabled) { background: #f1f5f9; }
+
+.admission-modal-body { padding: 1.5rem; }
+
+.admission-modal-summary {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.admission-modal-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.admission-modal-form-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.admission-modal-full-width { grid-column: 1 / -1; }
+
+.admission-modal-form-group label {
+  display: block;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.admission-modal-required { color: #ef4444; }
+
+.admission-modal-form-input,
+.admission-modal-form-select,
+.admission-modal-form-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+.admission-modal-form-input:focus,
+.admission-modal-form-select:focus,
+.admission-modal-form-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.admission-modal-alert {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+.admission-modal-alert-warning {
+  background: #fef3c7;
+  color: #92400e;
+  border-left: 4px solid #f59e0b;
+}
+
+.admission-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-top: 2px solid #e2e8f0;
+}
+
+.admission-modal-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.admission-modal-btn-secondary { background: #e2e8f0; color: #475569; }
+.admission-modal-btn-success { background: #10b981; color: white; }
+.admission-modal-btn-danger { background: #ef4444; color: white; }
+.admission-modal-btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+.admission-modal-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.admission-modal-spinner-inline {
+  animation: admissionModalSpin 1s linear infinite;
+}
+@keyframes admissionModalSpin { to { transform: rotate(360deg); } }

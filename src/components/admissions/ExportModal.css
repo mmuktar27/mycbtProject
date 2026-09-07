@@ -346,7 +346,164 @@
   color: #64748b !important;
   font-size: 0.95rem !important;
 }
+/* was .filter-group */
+.export-filter-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.5rem !important;
+}
 
+.export-filter-group label {
+  font-weight: 600 !important;
+  color: #475569 !important;
+  font-size: 0.95rem !important;
+}
+
+.export-filter-group select {
+  padding: 0.75rem !important;
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  font-size: 1rem !important;
+  background: white !important;
+  color: #1e293b !important;
+  transition: all 0.2s !important;
+}
+
+.export-filter-group select:focus {
+  outline: none !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+.export-filter-group select:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+
+/* was .pdf-options */
+.export-pdf-options {
+  display: flex !important;
+  gap: 2rem !important;
+}
+
+.export-pdf-options label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  font-weight: 500 !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+}
+
+.export-pdf-options input {
+  cursor: pointer !important;
+}
+
+/* was .app-id */
+.export-app-id {
+  background: #eff6ff !important;
+  color: #3b82f6 !important;
+  padding: 0.25rem 0.75rem !important;
+  border-radius: 4px !important;
+  font-family: monospace !important;
+  font-weight: 500 !important;
+}
+
+/* was .class-badge */
+.export-class-badge {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  padding: 0.25rem 0.75rem !important;
+  border-radius: 4px !important;
+  font-weight: 500 !important;
+}
+
+/* was .status-badge */
+.export-status-badge {
+  padding: 0.25rem 0.75rem !important;
+  border-radius: 4px !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+}
+
+.export-status-pending {
+  background: #fef3c7 !important;
+  color: #f59e0b !important;
+}
+
+.export-status-under_review {
+  background: #dbeafe !important;
+  color: #3b82f6 !important;
+}
+
+.export-status-approved {
+  background: #dcfce7 !important;
+  color: #16a34a !important;
+}
+
+.export-status-rejected {
+  background: #fee2e2 !important;
+  color: #dc2626 !important;
+}
+
+/* was .no-admissions */
+.export-no-admissions {
+  text-align: center !important;
+  padding: 2rem 1rem !important;
+  color: #64748b !important;
+  font-size: 0.95rem !important;
+}
+
+/* was .btn / .btn-primary / .btn-secondary */
+.export-btn {
+  padding: 0.75rem 1.5rem !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+  font-size: 1rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+}
+
+.export-btn:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+.export-btn:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+.export-btn-secondary {
+  background: #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+.export-btn-secondary:hover:not(:disabled) {
+  background: #cbd5e1 !important;
+}
+
+.export-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+}
+
+.export-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* was .spinner-inline */
+.export-spinner-inline {
+  animation: spinInline 1s linear infinite !important;
+  margin-right: 0.25rem !important;
+}
 /* Export Summary */
 .export-summary {
   padding: 1rem !important;

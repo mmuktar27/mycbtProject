@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Upload, Download, Save, RefreshCw, AlertCircle, CheckCircle, BookOpen } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import './Results.css';
-
+import AppDialog from '../shared/AppDialog';
+import { useAppDialog } from '../../hooks/useAppDialog';
 const API = '/api';
 
 export default function EnterExamResults() {
@@ -16,7 +17,7 @@ export default function EnterExamResults() {
     const [filterYear, setFilterYear] = useState('');
     const [filterTerm, setFilterTerm] = useState('');
     const [filterClass, setFilterClass] = useState('');
-
+const { dialog, showDialog, closeDialog, handleDialogAction } = useAppDialog();
     useEffect(() => { loadSessions(); }, []);
 
     async function loadSessions() {
@@ -89,47 +90,59 @@ export default function EnterExamResults() {
         setSaving(false);
     }
 
-  async function submitForApproval() {
+function submitForApproval() {
     if (!activeSession) return;
-    if (!window.confirm('Submit exam results for approval?')) return;
-    setSaving(true);
-    try {
-        // Auto-save first if there are unsaved changes
-        if (isDirty) {
-            const payload = results.map(r => ({
-                studentId: r.studentId,
-                ca1Score: r.ca1Score !== null && r.ca1Score !== undefined ? parseFloat(r.ca1Score) || 0 : 0,
-                ca2Score: r.ca2Score !== null && r.ca2Score !== undefined ? parseFloat(r.ca2Score) || 0 : 0,
-                ca3Score: r.ca3Score !== null && r.ca3Score !== undefined ? parseFloat(r.ca3Score) || 0 : 0,
-                examScore: r.examScore !== null && r.examScore !== undefined ? parseFloat(r.examScore) || 0 : 0,
-                isAbsent: r.isAbsent ? 1 : 0
-            }));
-            const saveRes = await fetch(`${API}/results/sessions/${activeSession.sessionId}/bulk-update`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ results: payload })
-            });
-            const saveData = await saveRes.json();
-            if (!saveData.success) {
-                showAlert('error', 'Failed to save scores before submission: ' + saveData.message);
-                setSaving(false);
-                return;
-            }
-        }
+    showDialog(
+        'warning',
+        'Submit for Approval',
+        'Submit exam results for approval?',
+        '',
+        'Submit',
+        async () => {
+            setSaving(true);
+            try {
+                if (isDirty) {
+                    const payload = results.map(r => ({
+                        studentId: r.studentId,
+                        ca1Score: r.ca1Score !== null && r.ca1Score !== undefined ? parseFloat(r.ca1Score) || 0 : 0,
+                        ca2Score: r.ca2Score !== null && r.ca2Score !== undefined ? parseFloat(r.ca2Score) || 0 : 0,
+                        ca3Score: r.ca3Score !== null && r.ca3Score !== undefined ? parseFloat(r.ca3Score) || 0 : 0,
+                        examScore: r.examScore !== null && r.examScore !== undefined ? parseFloat(r.examScore) || 0 : 0,
+                        isAbsent: r.isAbsent ? 1 : 0
+                    }));
+                    const saveRes = await fetch(`${API}/results/sessions/${activeSession.sessionId}/bulk-update`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ results: payload })
+                    });
+                    const saveData = await saveRes.json();
+                    if (!saveData.success) {
+                        closeDialog();
+                        showAlert('error', 'Failed to save scores before submission: ' + saveData.message);
+                        setSaving(false);
+                        return;
+                    }
+                }
 
-        // Now submit
-        const res = await fetch(`${API}/results/sessions/${activeSession.sessionId}/submit`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ submittedBy: 'Teacher' })
-        });
-        const data = await res.json();
-        if (data.success) {
-            showAlert('success', 'Scores saved and submitted for approval!');
-            await openSession(activeSession.sessionId);
-        } else showAlert('error', data.message);
-    } catch (e) { showAlert('error', e.message); }
-    setSaving(false);
+                const res = await fetch(`${API}/results/sessions/${activeSession.sessionId}/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ submittedBy: 'Teacher' })
+                });
+                const data = await res.json();
+                closeDialog();
+                if (data.success) {
+                    showAlert('success', 'Scores saved and submitted for approval!');
+                    await openSession(activeSession.sessionId);
+                } else showAlert('error', data.message);
+            } catch (e) {
+                closeDialog();
+                showAlert('error', e.message);
+            }
+            setSaving(false);
+        },
+        true
+    );
 }
 
     function downloadTemplate() {
@@ -357,6 +370,19 @@ export default function EnterExamResults() {
                     )}
                 </div>
             </div>
+
+            <AppDialog
+  isOpen={dialog.isOpen}
+  type={dialog.type}
+  title={dialog.title}
+  message={dialog.message}
+  details={dialog.details}
+  actionLabel={dialog.actionLabel}
+  onAction={dialog.onAction ? handleDialogAction : null}
+  onClose={closeDialog}
+  showCancel={dialog.showCancel}
+  actionLoading={dialog.actionLoading || saving}
+/>
         </div>
     );
 }

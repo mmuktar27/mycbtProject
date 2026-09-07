@@ -15,7 +15,8 @@ import {
   XCircle        // for XCircle
 } from 'lucide-react';
 import './Stafflist.css';
-
+import AppDialog from '../shared/AppDialog';
+import { useAppDialog } from '../../hooks/useAppDialog';
 const StaffList = () => {
   const navigate = useNavigate();
   const [staff, setStaff] = useState([]);
@@ -34,7 +35,7 @@ const StaffList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-
+const { dialog, showDialog, closeDialog, handleDialogAction } = useAppDialog();
   // Nigerian school staff roles
   const roles = [
     'Principal',
@@ -88,7 +89,7 @@ const StaffList = () => {
       }
     } catch (error) {
       console.error('Error fetching staff:', error);
-      alert('Failed to load staff members. Please try again.');
+      showDialog('error', 'Failed to Load Staff', 'Could not load staff members. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -125,44 +126,59 @@ const StaffList = () => {
     setPagination({ ...pagination, page: 1 });
   };
 
-  const handleDeleteClick = (staffMember) => {
-    setSelectedStaff(staffMember);
-    setShowDeleteModal(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    try {
-      setDeleteLoading(true);
-      const response = await axios.delete(`/api/staff/${selectedStaff.staffId}`);
-      
-      if (response.data.success) {
-        alert('Staff member deactivated successfully');
-        setShowDeleteModal(false);
-        setSelectedStaff(null);
-        fetchStaff();
+const handleDeleteClick = (staffMember) => {
+  showDialog(
+    'warning',
+    'Confirm Deactivation',
+    `Are you sure you want to deactivate ${staffMember.firstName} ${staffMember.lastName}?`,
+    'This will set their status to inactive. They will no longer be able to access the system.',
+    'Yes, Deactivate',
+    async () => {
+      try {
+        const response = await axios.delete(`/api/staff/${staffMember.staffId}`);
+        closeDialog();
+        if (response.data.success) {
+          fetchStaff();
+        }
+      } catch (error) {
+        console.error('Error deleting staff:', error);
+        closeDialog();
+        showDialog('error', 'Deactivation Failed', 'Failed to deactivate staff member. Please try again.');
       }
-    } catch (error) {
-      console.error('Error deleting staff:', error);
-      alert('Failed to deactivate staff member. Please try again.');
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
+    },
+    true
+  );
+};
 
   const handlePageChange = (newPage) => {
     setPagination({ ...pagination, page: newPage });
   };
 
-  const getStatusBadge = (status) => {
-    if (status === 'active') {
-      return <span className="badge badge-success"><CheckCircle /> Active</span>;
-    }
-    return <span className="badge badge-danger"><XCircle /> Inactive</span>;
+const getStatusBadge = (status) => {
+  const badgeStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '4px 10px',
+    borderRadius: '16px',
+    fontSize: '12px',
+    fontWeight: 600
   };
 
+  if (status === 'active') {
+    return (
+      <span style={{ ...badgeStyle, background: '#dcfce7', color: '#16a34a' }}>
+        <CheckCircle size={14} /> Active
+      </span>
+    );
+  }
+  return (
+    <span style={{ ...badgeStyle, background: '#fee2e2', color: '#dc2626' }}>
+      <XCircle size={14} /> Inactive
+    </span>
+  );
+};
 
-  console.log('staff')
-  console.log(staff)
 
   return (
     <div className="staff-list-container">
@@ -178,49 +194,90 @@ const StaffList = () => {
       </div>
 
       {/* Filters and Search */}
-      <div className="filters-section">
-        <div className="search-box">
-          <Search className="search-icon" />
-          <input
-            type="text"
-            placeholder="Search by name, email, or staff ID..."
-            value={searchTerm}
-            onChange={handleSearch}
-            className="search-input"
-          />
-        </div>
+<div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+  <div style={{ position: 'relative', flex: '1 1 260px', minWidth: '220px' }}>
+    <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '18px', height: '18px', color: '#9ca3af' }} />
+    <input
+      type="text"
+      placeholder="Search by name, email, or staff ID..."
+      value={searchTerm}
+      onChange={handleSearch}
+      style={{
+        width: '100%',
+        padding: '10px 12px 10px 38px',
+        fontSize: '14px',
+        border: '1px solid #e5e7eb',
+        borderRadius: '8px',
+        outline: 'none',
+        color: '#111827'
+      }}
+    />
+  </div>
 
-        <div className="filter-controls">
-          <div className="filter-group">
-            <Filter className="filter-icon" />
-            <select value={filterRole} onChange={handleFilterRole} className="filter-select">
-              <option value="">All Roles</option>
-              {roles.map(role => (
-                <option key={role} value={role}>{role}</option>
-              ))}
-            </select>
-          </div>
+  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <Filter style={{ width: '16px', height: '16px', color: '#6b7280' }} />
+      <select
+        value={filterRole}
+        onChange={handleFilterRole}
+        style={{
+          padding: '8px 10px',
+          fontSize: '14px',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
+          color: '#111827',
+          background: '#fff'
+        }}
+      >
+        <option value="">All Roles</option>
+        {roles.map(role => (
+          <option key={role} value={role}>{role}</option>
+        ))}
+      </select>
+    </div>
 
-          <div className="filter-group">
-            <select value={filterDepartment} onChange={handleFilterDepartment} className="filter-select">
-              <option value="">All Departments</option>
-              {departments.map(dept => (
-                <option key={dept.id} value={dept.departmentName}>
-                  {dept.departmentName}
-                </option>
-              ))}
-            </select>
-          </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <select
+        value={filterDepartment}
+        onChange={handleFilterDepartment}
+        style={{
+          padding: '8px 10px',
+          fontSize: '14px',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
+          color: '#111827',
+          background: '#fff'
+        }}
+      >
+        <option value="">All Departments</option>
+        {departments.map(dept => (
+          <option key={dept.id} value={dept.departmentName}>
+            {dept.departmentName}
+          </option>
+        ))}
+      </select>
+    </div>
 
-          <div className="filter-group">
-            <select value={filterStatus} onChange={handleFilterStatus} className="filter-select">
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="">All Status</option>
-            </select>
-          </div>
-        </div>
-      </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <select
+        value={filterStatus}
+        onChange={handleFilterStatus}
+        style={{
+          padding: '8px 10px',
+          fontSize: '14px',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
+          color: '#111827',
+          background: '#fff'
+        }}
+      >
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+        <option value="">All Status</option>
+      </select>
+    </div>
+  </div>
+</div>
 
       {/* Staff Table */}
       {loading ? (
@@ -352,44 +409,18 @@ const StaffList = () => {
           )}
         </>
       )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="modal-overlay" onClick={() => !deleteLoading && setShowDeleteModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Confirm Deactivation</h3>
-            </div>
-            <div className="modal-body">
-              <div className="warning-icon">
-                <XCircle />
-              </div>
-              <p>
-                Are you sure you want to deactivate <strong>{selectedStaff?.firstName} {selectedStaff?.lastName}</strong>?
-              </p>
-              <p className="warning-text">
-                This will set their status to inactive. They will no longer be able to access the system.
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="btn btn-secondary"
-                disabled={deleteLoading}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                className="btn btn-danger"
-                disabled={deleteLoading}
-              >
-                {deleteLoading ? 'Deactivating...' : 'Yes, Deactivate'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+<AppDialog
+  isOpen={dialog.isOpen}
+  type={dialog.type}
+  title={dialog.title}
+  message={dialog.message}
+  details={dialog.details}
+  actionLabel={dialog.actionLabel}
+  onAction={dialog.onAction ? handleDialogAction : null}
+  onClose={closeDialog}
+  showCancel={dialog.showCancel}
+  actionLoading={dialog.actionLoading}
+/>
     </div>
   );
 };

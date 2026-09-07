@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Eye, RefreshCw, AlertCircle, ClipboardCheck } from 'lucide-react';
 import './Results.css';
-
+import AppDialog from '../shared/AppDialog';
+import { useAppDialog } from '../../hooks/useAppDialog';
 const API = '/api';
 
 export default function ApproveResults() {
@@ -17,7 +18,7 @@ export default function ApproveResults() {
     const [filterTerm, setFilterTerm] = useState('');
     const [filterYear, setFilterYear] = useState('');
     const [stats, setStats] = useState({});
-
+const { dialog, showDialog, closeDialog, handleDialogAction } = useAppDialog();
     useEffect(() => {
         loadPendingApprovals();
         loadStats();
@@ -66,27 +67,40 @@ export default function ApproveResults() {
         setTimeout(() => setAlert(null), 6000);
     }
 
-    async function handleApprove() {
-        if (!activeSession) return;
-        if (!window.confirm(`Approve results for ${activeSession.subjectName} - ${activeSession.className}?`)) return;
-        setProcessing(true);
-        try {
-            const res = await fetch(`${API}/results/sessions/${activeSession.sessionId}/approve`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'approve', approvedBy })
-            });
-            const data = await res.json();
-            if (data.success) {
-                showAlert('success', '✅ Results approved successfully!');
-                setActiveSession(null);
-                setResults([]);
-                await loadPendingApprovals();
-                await loadStats();
-            } else showAlert('error', data.message);
-        } catch (e) { showAlert('error', e.message); }
-        setProcessing(false);
-    }
+   function handleApprove() {
+    if (!activeSession) return;
+    showDialog(
+        'warning',
+        'Approve Results',
+        `Approve results for ${activeSession.subjectName} - ${activeSession.className}?`,
+        '',
+        'Approve',
+        async () => {
+            setProcessing(true);
+            try {
+                const res = await fetch(`${API}/results/sessions/${activeSession.sessionId}/approve`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'approve', approvedBy })
+                });
+                const data = await res.json();
+                closeDialog();
+                if (data.success) {
+                    showAlert('success', '✅ Results approved successfully!');
+                    setActiveSession(null);
+                    setResults([]);
+                    await loadPendingApprovals();
+                    await loadStats();
+                } else showAlert('error', data.message);
+            } catch (e) {
+                closeDialog();
+                showAlert('error', e.message);
+            }
+            setProcessing(false);
+        },
+        true // showCancel
+    );
+}
 
     async function handleReject() {
         if (!rejectionReason.trim()) return showAlert('error', 'Please provide a rejection reason');
@@ -157,9 +171,27 @@ export default function ApproveResults() {
                 <div className="sessions-panel">
                     <div className="panel-header">
                         <h3>Pending Approvals</h3>
-                        <button className="btn-icon" onClick={loadPendingApprovals} disabled={loading}>
-                            <RefreshCw size={14} className={loading ? 'spin' : ''} />
-                        </button>
+                        <button
+  onClick={loadPendingApprovals}
+  disabled={loading}
+  style={{
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px',
+    border: '1px solid #e5e7eb',
+    borderRadius: '6px',
+    background: '#fff',
+    cursor: loading ? 'not-allowed' : 'pointer',
+    opacity: loading ? 0.6 : 1
+  }}
+>
+  <RefreshCw
+    size={14}
+    style={loading ? { animation: 'spin 1s linear infinite' } : undefined}
+  />
+</button>
                     </div>
                     <div className="filter-row">
                         <select value={filterTerm} onChange={e => setFilterTerm(e.target.value)}>
@@ -321,6 +353,20 @@ export default function ApproveResults() {
                     </div>
                 </div>
             )}
+
+
+            <AppDialog
+  isOpen={dialog.isOpen}
+  type={dialog.type}
+  title={dialog.title}
+  message={dialog.message}
+  details={dialog.details}
+  actionLabel={dialog.actionLabel}
+  onAction={dialog.onAction ? handleDialogAction : null}
+  onClose={closeDialog}
+  showCancel={dialog.showCancel}
+  actionLoading={dialog.actionLoading || processing}
+/>
         </div>
     );
 }

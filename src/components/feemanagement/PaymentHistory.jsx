@@ -274,77 +274,172 @@ const PaymentHistory = () => {
       </div>
 
       {/* Filters Section */}
-      <div className="filters-section">
-        <div className="search-box">
-          <Search className="search-icon" />
-          <input
-            type="text"
-            placeholder="Search by student name, ID, or receipt number..."
-            value={filters.search}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="search-input"
-          />
-        </div>
+<div className="filters-section" style={{ display: 'block', textAlign: 'left' }}>
+  <div className="search-box">
+    <Search className="search-icon" />
+    <input
+      type="text"
+      placeholder="Search by student name, ID, or receipt number..."
+      value={filters.search}
+      onChange={(e) => handleSearch(e.target.value)}
+      className="search-input"
+    />
+  </div>
 
-        <div className="filters-row">
-          <div className="filter-group">
-            <label>Academic Year</label>
-            <select
-              value={filters.academicYear}
-              onChange={(e) => handleFilterChange('academicYear', e.target.value)}
-            >
-              <option value="">All Years</option>
-              {academicYears.length === 0 ? (
-                <option value="">Loading...</option>
-              ) : (
-                academicYears.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                    {schoolSettings && year === schoolSettings.academicYear && ' (Current)'}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+      gap: '1rem',
+      alignItems: 'end',
+      width: '100%',
+      marginTop: '1rem'
+    }}
+  >
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+      <label style={{
+        fontSize: '0.75rem',
+        fontWeight: 600,
+        color: '#6b7280',
+        marginBottom: '0.5rem',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px'
+      }}>
+        Academic Year
+      </label>
+      <select
+        value={filters.academicYear}
+        onChange={(e) => handleFilterChange('academicYear', e.target.value)}
+        style={{
+          width: '100%',
+          padding: '0.625rem',
+          fontSize: '0.875rem',
+          border: '1px solid #d1d5db',
+          borderRadius: '6px',
+          backgroundColor: 'white',
+          boxSizing: 'border-box'
+        }}
+      >
+        <option value="">All Years</option>
+        {academicYears.length === 0 ? (
+          <option value="">Loading...</option>
+        ) : (
+          academicYears.map((year) => (
+            <option key={year} value={year}>
+              {year}
+              {schoolSettings && year === schoolSettings.academicYear && ' (Current)'}
+            </option>
+          ))
+        )}
+      </select>
+    </div>
 
-          <div className="filter-group">
-            <label>Class</label>
-            <select
-              value={filters.className}
-              onChange={(e) => handleFilterChange('className', e.target.value)}
-            >
-              <option value="">All Classes</option>
-              {classes.map((cls) => (
-                <option key={cls.id} value={cls.className}>
-                  {cls.className}
-                </option>
-              ))}
-            </select>
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+      <label style={{
+        fontSize: '0.75rem',
+        fontWeight: 600,
+        color: '#6b7280',
+        marginBottom: '0.5rem',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px'
+      }}>
+        Class
+      </label>
+      <select
+        value={filters.className}
+        onChange={(e) => handleFilterChange('className', e.target.value)}
+        style={{
+          width: '100%',
+          padding: '0.625rem',
+          fontSize: '0.875rem',
+          border: '1px solid #d1d5db',
+          borderRadius: '6px',
+          backgroundColor: 'white',
+          boxSizing: 'border-box'
+        }}
+      >
+        <option value="">All Classes</option>
+        {classes.map((cls) => (
+          <option key={cls.id} value={cls.className}>
+            {cls.className}
+          </option>
+        ))}
+      </select>
+    </div>
 
-          <div className="filter-group">
-            <label>Start Date</label>
-            <input
-              type="date"
-              value={filters.startDate}
-              onChange={(e) => handleFilterChange('startDate', e.target.value)}
-            />
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+      <label style={{
+        fontSize: '0.75rem',
+        fontWeight: 600,
+        color: '#6b7280',
+        marginBottom: '0.5rem',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px'
+      }}>
+        Start Date
+      </label>
+      <input
+        type="date"
+        value={filters.startDate}
+        onChange={(e) => handleFilterChange('startDate', e.target.value)}
+        style={{
+          width: '100%',
+          padding: '0.625rem',
+          fontSize: '0.875rem',
+          border: '1px solid #d1d5db',
+          borderRadius: '6px',
+          backgroundColor: 'white',
+          boxSizing: 'border-box'
+        }}
+      />
+    </div>
 
-          <div className="filter-group">
-            <label>End Date</label>
-            <input
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => handleFilterChange('endDate', e.target.value)}
-            />
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+      <label style={{
+        fontSize: '0.75rem',
+        fontWeight: 600,
+        color: '#6b7280',
+        marginBottom: '0.5rem',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px'
+      }}>
+        End Date
+      </label>
+      <input
+        type="date"
+        value={filters.endDate}
+        onChange={(e) => handleFilterChange('endDate', e.target.value)}
+        style={{
+          width: '100%',
+          padding: '0.625rem',
+          fontSize: '0.875rem',
+          border: '1px solid #d1d5db',
+          borderRadius: '6px',
+          backgroundColor: 'white',
+          boxSizing: 'border-box'
+        }}
+      />
+    </div>
 
-          <button className="clear-filters-btn" onClick={clearFilters}>
-            Clear Filters
-          </button>
-        </div>
-      </div>
+    <button
+      onClick={clearFilters}
+      style={{
+        padding: '0.625rem 1rem',
+        background: '#f3f4f6',
+        color: '#374151',
+        border: 'none',
+        borderRadius: '6px',
+        fontSize: '0.875rem',
+        fontWeight: 500,
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
+        height: 'fit-content'
+      }}
+    >
+      Clear Filters
+    </button>
+  </div>
+</div>
 
       {/* Payments Table */}
       <div className="payments-table-container">
